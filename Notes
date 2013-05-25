@@ -8,4 +8,10 @@ Je crois qu’on doit créer les classes INFO suivantes:
 - INFOTYPE
 - INFOPARAM //je suis pas sure mais peut être on aura besoin
 Pour la tds
+-  t:= new TDS(nil);
+   // transmettre la table à CLASSES
+   CLASSES^tds:=t; // elle correspond à la table ou il y a les classes
+-   t :=  new TDS(DEFCLASSE^tds); 
+   // transmettre la table à CORPS avec la tds parente est celle des classes.
+   CORPS^tds := t;
 
