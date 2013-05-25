@@ -1,0 +1,11 @@
+Rapport de projet traduction des langages
+Les tables de symboles:
+Je crois qu’on doit créer les classes INFO suivantes:
+- INFOCLASS
+- INFOATTRIBUT
+- INFOMETHOD
+- INFOVAR
+- INFOTYPE
+- INFOPARAM //je suis pas sure mais peut être on aura besoin
+Pour la tds
+
