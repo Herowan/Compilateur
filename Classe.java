@@ -8,11 +8,13 @@ public class Classe {
 	public ArrayList<Method> methodes; // a revoir si séparer de constructeurs !
 	public Classe ClasseMere;
 	boolean hasMain;
+	String name;
 	// penser a import , faire une liste des import , utile pourquoi?
     	
 	
 	
 	public Classe(String name){		
+		this.name = name;
 		this.attributs = new ArrayList<Attribut>();
 		this.methodes = new ArrayList<Method>();		
 	}
@@ -65,12 +67,19 @@ public class Classe {
 	}
 	
 	//sert pour le cas de Point p = pt; Point Colore p = pt , a voir encore !
+	
 	@Override
 	public boolean equals(Object o){
 	
 		if (o == null) {return false;}
 		
-		if 
+		if (this.equals(o))
+			return true;
+		if (ClasseMere != null)
+		 return ClasseMere.equals(o);
+		
+		return false;
+		
 	}
 	
 	//utile si on veut redéclarer une méthode main ou qu'on veuille éxecuter une classe sans main => Error !
