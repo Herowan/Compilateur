@@ -1,0 +1,293 @@
+-----------------------------------------------
+-- BLOC 
+-- semantique : tds + verification de type
+-- + adresses + code
+-----------------------------------------------
+option auto= true;
+option version = 0.0.1 ; 
+option k=2;
+
+
+
+inh tam : TAM for BLOC, INSTS,  INST, TERME, FACTEUR, FX, TERMES, APPEL;
+inh source : BLOCSourceFile for PROG ; 
+inh tds    : TDS     for BLOC, INST, INSTS, TERME, FACTEUR, TYPE , CHAMPS, TERMES,
+          APPEL; -- Contrainte #1
+syn type   : DTYPE   for TYPE, TERME, FACTEUR, FX;
+inh htype   : DTYPE   for  FX;
+inh champs : LCHAMPS for CHAMPS;
+inh types : LTYPES for  TERMES;
+inh hadr : INTEGER for BLOC, INSTS, INST , CHAMPS;
+syn adr : INTEGER for INST , INSTS;
+syn code : STRING for BLOC, INSTS, INST, TERME, FACTEUR, FX, TERMES, APPEL;
+inh hcode : STRING for FX;
+syn est_adresse : BOOLEAN for TERME, FACTEUR, FX ;
+inh hest_adresse : BOOLEAN for FX ;
+-----------------------------------------------------------------
+-- Attributs lies aux contraintes 2 et 3
+-----------------------------------------------------------------
+-- Le nom de la procedure
+inh proc : String for APPEL, BLOC, INSTS, INST;
+-- le type du parametre
+inh type_par : DTYPE for BLOC, INSTS, INST, APPEL ;
+
+
+space  separateur  is    "[\n\r\t ]+";
+space  comments    is    "\/\/.*[\n\r]"; 
+sugar  aco         is    "\{";
+sugar  acf         is    "\}";
+sugar  paro        is    "\(";
+sugar  parf        is    "\)";
+sugar  pv          is    ";";
+sugar  v           is    ",";
+sugar  aff         is    "=";
+sugar  struct      is    "struct" ;
+sugar  pt          is    "\." ;
+sugar  etoile      is    "\*" ;
+sugar  new         is    "new" ;
+sugar  type        is    "type" ;
+sugar  vrai        is    "true";
+sugar  faux        is    "false";
+sugar  si          is    "if";
+sugar  sinon       is    "else";
+sugar  int         is    "int";
+sugar  bool        is    "bool";
+term   entier      is    "[0-9]+";
+term   ident       is    "[A-Za-z_]+";
+
+----------------------------------------------------------------------
+-- Le programme est maintenant une procedure avec un seul parametre.
+-- suivi d'un appel a cette procedure avec une valeur
+-- pour ce parametre
+-- NB : un appel a cette procedure peut etre effectue DANS la procedure
+-- elle-meme (recursive donc)
+--------------------------------------------------
+-- NB :
+-- A LIRE (ok) : Le code est bon et doit etre compris
+-- A FAIRE/COMPLETER : Le code a completer est sous la forme ???
+--------------------------------------------------
+PROG -> ident #tds paro TYPE ident parf #par BLOC  APPEL #gen  ;
+global
+  tam : TAM; 
+  -- Table pour le parametre de la procedure 
+  t : TDS ;
+#tds {
+do
+ --------------------------------------------------
+   -- CONTRAINTE #1 (A LIRE : ok) : Creer une table pour le parametre de la procedure 
+   t := new TDS(nil);
+ --------------------------------------------------
+   -- CONTRAINTE #2 (A FAIRE/COMPLETER ): transmettre la tds et le nom de la procedure au bloc
+   BLOC^tds := new TDS(t);  --mouna ou t ??
+   BLOC^proc := ident^txt ; --mouna
+   -- une tds pour le type
+   TYPE^tds := t;
+ --------------------------------------------------
+   -- CONTRAINTE #2 (A FAIRE/COMPLETER ): transmettre la tds et le nom de la procedure  a l'appel
+   APPEL^tds := t;--???;
+   APPEL^proc := ident^txt;--??? ;
+--------------------------------------------------
+   -- les variables locales commencent a 3 
+   BLOC^hadr := 3;
+   tam :=  new TAM(PROG^source.getFileName());
+   BLOC^tam := tam;
+   APPEL^tam := tam;
+end
+}
+
+-----------------------------------------------------
+-- Creation du parametre comme une variable
+-- et insertion dans la table
+------------------------------------------------
+#par {
+local
+  iv : INFOVAR ;
+  d : INTEGER;
+do
+  -- CONTRAINTE #1 (A LIRE (ok): creer le parametre
+  -- creer une variable pour le parametre (dep =  - taille par)
+  d:= TYPE^type.getTaille();
+  -- deplacement negatif par rapport a LB
+  iv := new INFOVAR(TYPE^type, 0 -d, "LB");
+  -- insertion
+  call t.inserer(ident1^txt,  iv);
+--------------------------------------------------
+  -- CONTRAINTE #3 (A FAIRE/COMPLETER ):  transmettre le TYPE du parametre
+  BLOC^type_par := TYPE^type;--???;
+  APPEL^type_par := TYPE^type;-- ???;
+--------------------------------------------------
+  -- Afficher la table pour information
+  write "; tds  par\n" + t;
+  
+end
+}
+
+--------------------------------------------------
+-- Le code est compose du code de la procedure et du code de l'appel
+--------------------------------------------------
+#gen{
+local
+  cp : STRING ; -- code de la procedure
+do
+   -- (A FAIRE/COMPLETER )
+   -- code de la procedure : generer le prologue et l'epilogue 
+   -- etiquette + taille des parametres + taille retour + code des instructions
+   cp := tam.genFonction(ident^txt, TYPE^type.getTaille() , 0, BLOC^code);  			--MOUNA
+   -- generer le code complet
+   call tam.genAsm(cp, APPEL^code);		--MOUNA
+end
+}
+
+--------------------------------------------------
+-- Appel de la procedure avec un seul parametre
+-- Controler le type du TERME
+-- generer le code de l'appel
+--------------------------------------------------
+
+APPEL -> ident paro TERME parf pv #gen ;
+#gen {
+local
+  tpar : DTYPE;
+do
+   -- existence de la procedure appelee ?
+   if ident^txt.equals(APPEL^proc) then
+   -- (A FAIRE/COMPLETER ) : controle de type
+     if ~TERME^type.compareTo(APPEL^type_par) then ----mouna
+       error(B_02, APPEL^type_par, TERME^type); ----mouna
+     else
+    -- (A FAIRE/COMPLETER ) : generation de code
+       APPEL^code := APPEL^tam.genCall(ident^txt, TERME^code);   --mouna
+     end
+   else
+      error(B99, ident^txt);
+   end
+end
+}
+
+-----------------------------------------------------
+-- A LIRE (ok)
+-- Cette instruction permet d'appeler une procedure
+-- dans un bloc
+----------------------------------------------------
+INST -> APPEL #gen;
+#gen {
+do
+    INST^adr := INST^hadr;
+    INST^code := APPEL^code ;
+end
+}
+
+-------------------------------------------------------------------
+-- A partir d'ici : PAS de changement par rapport a l'exo 1
+-------------------------------------------------------------------
+BLOC -> aco #tds INSTS acf #gen ;
+global        -- globale aux actions de cette regle
+  t : TDS;    -- pour voir la TDS du bloc
+#tds {
+do
+   t :=  new TDS(BLOC^tds);
+   INSTS^tds := t;
+end
+}
+#gen {
+do
+   write "; tds:\n" + t;
+   write "; taille des locales = " + (INSTS^adr - BLOC^hadr)+ "\n";
+   BLOC^code := INSTS^code + BLOC^tam.genFree(INSTS^adr - BLOC^hadr);
+end
+}
+
+-------------------------------------------------------
+-- les types
+-------------------------------------------------------
+TYPE -> bool #type ;
+#type {
+do
+  TYPE^type := new DTYPE("booleen", 1);
+end
+}
+
+TYPE -> int  #type ;
+#type {
+do
+    TYPE^type := new DTYPE("entier", 1);
+end
+}
+
+-------------------------------------------------------
+-- les noms de types 
+-------------------------------------------------------
+TYPE -> ident  #type ;
+#type {
+ local
+    i : INFO ;
+    it : INFOTYPE;
+    t : DTYPE;
+ do
+    -- rechercher l'ident   
+    i := TYPE^tds.chercherGlobalement(ident^txt);
+    if i = nil then
+      error(B_01, ident^txt);
+    else
+       match i
+       with INFOTYPE then
+         it := i ;
+         TYPE^type :=  it.getType();
+       else
+          error(B_07, ident^txt);
+       end
+    end
+  end
+}
+
+-------------------------------------------------------
+-- les struct
+-------------------------------------------------------
+TYPE -> struct aco #ch CHAMPS acf  #type ;
+global 
+ lc : LCHAMPS ;
+#ch {
+do
+  lc := new LCHAMPS();
+  CHAMPS^champs := lc;
+  CHAMPS^hadr := 0;
+end
+}
+
+#type {
+ do
+   TYPE^type := new STRUCT(lc);
+ end
+}
+
+CHAMPS -> ;
+CHAMPS -> TYPE ident pv #ch CHAMPS ;
+#ch {
+ local
+  c : CHAMP ;
+ do
+  c := CHAMPS^champs.chercher(ident^txt);
+    if c /= nil then
+       error(B_00, ident^txt);
+    else    
+      c := new CHAMP(ident^txt, TYPE^type, CHAMPS^hadr);
+     call CHAMPS^champs.inserer(c);
+     CHAMPS1^hadr := CHAMPS^hadr + TYPE^type.getTaille();
+    end
+ end
+}
+
+-------------------------------------------------------
+-- Les pointeurs
+-------------------------------------------------------
+TYPE -> etoile TYPE #type ;
+#type {
+do
+  TYPE^type := new POINTEUR(TYPE1^type);
+end
+}
+
+-------------------------------------------------------
+-- instructions (et declarations)
+-------------------------------------------------------
+INSTS ->  #gen;
