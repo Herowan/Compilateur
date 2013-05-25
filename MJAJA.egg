@@ -4,7 +4,7 @@
 -- + adresses + code
 -----------------------------------------------
 option auto= true;
-option version = 0.0.; 
+option version = 0.0.1; 
 option k=2;
 
 
