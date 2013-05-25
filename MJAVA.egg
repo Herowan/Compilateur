@@ -1,0 +1,200 @@
+-- PROJET3 STL 12-13 - micro java : grammaire 
+option auto= true;
+option version = 0.0.0 ;
+option k=3;
+
+-- les attributs semantiques
+inh source : MJAVASourceFile for PROGRAMME;
+inh tds :TDS for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF, BLOC,SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST, SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX, F,FX, ARGS, ARGSX;
+          		          -- je crois qu'il faut enlever tout les trucs avec un X à la fin 
+-- les terminaux 
+space separateur is  "[\r\n\t ]+";     
+space comm is  "\/\/[^\n]*\n";
+sugar paro is  "\(";
+sugar parf is  "\)";
+sugar aco is  "\{";     
+sugar acf is  "\}"; 
+sugar cro is  "\["; 
+sugar crf is  "\]";
+sugar virg is  ","; 
+sugar pv is  "\;";
+sugar pt is  "\.";
+sugar affect is  "=";
+sugar si is  "if";
+sugar sinon is  "else";
+sugar void is  "void";
+sugar int is  "int";
+sugar bool is  "boolean";
+sugar classe is  "class";
+sugar extend is  "extends";
+sugar retour is  "return";
+sugar this is  "this";
+sugar super is  "super";
+sugar nouveau is  "new";
+sugar null is  "null";
+sugar inf is  "\<";
+sugar infeg is  "\<=";
+sugar sup is  "\>";
+sugar supeg is  "\>=";
+sugar eg is  "==";
+sugar neg is  "\!=";
+sugar plus is  "\+";
+sugar moins is  "\-";
+sugar ou is  "\|\|";
+sugar mult is  "\*";
+sugar div is  "\/";
+sugar mod is  "\%" ; 
+sugar et is  "\&\&";
+sugar non is  "\!";
+sugar vrai is  "true";
+sugar faux is  "false";
+term entier is  "[0-9]+";
+term ident is  "[_A-Za-z][_0-9A-Za-z]*";
+
+---------- REGLES DE PRODUCTION ----------------------------------------
+PROGRAMME -> #init #tds CLASSES #gen;
+global
+   machine : AbstractMachine;
+   t: TDS;
+
+#init {
+local
+do
+   machine := PROGRAMME^source.getMachine();
+end
+}
+
+#tds{
+do
+-- creer la table pour les classes du programme
+ t:= new TDS_prog(nil);
+-- transmettre la table à CLASSES
+CLASSES^tds:=t;
+end
+}
+#gen {
+local
+do
+  call machine.writeCode(PROGRAMME^source.getFileName(), "; GC"); 
+end
+}
+
+CLASSES ->;
+CLASSES -> DEFCLASSE CLASSES;
+-- definition d'une classe
+DEFCLASSE -> classe ident SUPER #tds CORPS;
+global
+  t: TDS;
+#tds{
+do
+   t :=  new TDS(DEFCLASSE^tds);
+   CORPS^tds := t;
+end
+}
+
+SUPER ->;
+SUPER -> extend ident;
+CORPS -> aco DEFS acf;
+-- les attributs
+DEFS ->;
+DEFS ->  DEF DEFS;
+-- attribut
+DEF ->  TYPE ident pv;
+-- methode (fonction) 
+DEF ->  TYPE ident paro PARFS parf BLOC;
+-- methode (procedure)
+DEF ->  void ident paro PARFS parf BLOC;
+-- constructeur
+DEF -> ident  paro PARFS parf BLOC;
+-- les types
+TYPE-> int ;
+TYPE-> bool ;
+TYPE-> ident ;
+-- parametres de methodes
+PARFS -> ;
+PARFS -> PARF PARFSX ;
+PARFSX -> ;
+PARFSX -> virg PARF PARFSX ;
+PARF -> TYPE ident ;
+-- corps de methode et bloc d'instructions
+BLOC -> aco INSTS acf ;
+-- instructions
+INSTS -> ;
+INSTS -> INST INSTS ;
+-- declaration de variable locale avec ou sans init
+INST-> TYPE ident pv ;
+INST-> TYPE ident affect E pv ;
+-- instruction expression
+INST -> E pv ;
+-- bloc d'instructions
+INST -> BLOC ;
+-- conditionnelle
+INST -> si paro E parf BLOC SIX ;
+SIX -> sinon BLOC ;
+SIX ->;
+-- return
+INST -> retour E pv ;
+-- les expressions
+E ->  ER AFFX ;
+-- affectation
+AFFX ->  affect ER  ;
+AFFX -> ;
+-- relation
+ER ->   ES ERX ;
+ES ->  TERME ESX ;
+ERX ->  OPREL ES ;
+ERX -> ;
+OPREL -> inf ;
+OPREL -> infeg ;
+OPREL -> sup ;
+OPREL -> supeg ;
+OPREL -> eg ;
+OPREL -> neg ;
+-- addition, ...
+ESX ->   OPADD TERME ESX ;
+ESX ->;
+OPADD -> plus ;
+OPADD -> moins ;
+OPADD -> ou ;
+TERME ->  FACTEUR TX ;
+-- multiplication, ...
+TX ->   OPMUL FACTEUR TX ;
+TX -> ;
+OPMUL -> mult ;
+OPMUL -> div ;
+OPMUL -> mod ;
+OPMUL -> et ;
+-- unaire
+FACTEUR ->  OPUN FACTEUR ;
+OPUN -> plus;
+OPUN -> moins;
+OPUN -> non;
+-- expressions de base
+FACTEUR -> entier;
+-- booleens
+FACTEUR -> vrai;
+FACTEUR -> faux;
+-- null
+FACTEUR -> null;
+FACTEUR -> F;
+-- expression parenthésée
+F -> paro E parf ;
+-- new
+F -> nouveau TYPE paro ARGS parf  FX;
+-- objet courant
+F -> this  FX;
+-- objet parent
+F -> super  FX;
+-- acces variable, parametre, ou attribut de this
+F -> ident FX;
+FX -> ;
+FX -> pt ident FX;
+-- appel methode sur objet
+FX -> paro ARGS parf FX;
+-- liste d'arguments d'appel de methode
+ARGS ->  E ARGSX  ;
+ARGS -> ;
+ARGSX ->   virg E ARGSX  ;
+ARGSX -> ;
+
+end
