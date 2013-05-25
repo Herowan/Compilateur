@@ -14,4 +14,6 @@ Pour la tds
 -   t :=  new TDS(DEFCLASSE^tds); 
    // transmettre la table à CORPS avec la tds parente est celle des classes.
    CORPS^tds := t;
+-  t:= BLOC^tds; // maitenant pour les blocs
+INSTS^tds:= new TDS(t);
 
