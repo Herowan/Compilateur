@@ -14,7 +14,8 @@ Pour la tds
 -   t :=  new TDS(DEFCLASSE^tds); 
    // transmettre la table à CORPS avec la tds parente est celle des classes.
    CORPS^tds := t;
-    Donc chaque classe aura sa propore table de symbole.  
+    Donc chaque classe aura sa propore table de symbole.
+    Chaque méthode et chaque attribut de la classe sera ajouté dans cette table.
 -  t:= BLOC^tds; // maitenant pour les blocs: tout bloc aura sa propore table
 INSTS^tds:= new TDS(t);
 
