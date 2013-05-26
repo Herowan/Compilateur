@@ -19,3 +19,12 @@ Pour la tds
 -  t:= BLOC^tds; // maitenant pour les blocs: tout bloc aura sa propore table
 INSTS^tds:= new TDS(t);
 
+Remarque sur la Surcharge
+
+Certains langages permettent d'utiliser un même nom pour différentes fonctions pour autant que leurs arguments 
+diffèrent en nombre et/ou en types. Nous devons donc alors maintenir une collection comme valeur, car nous aurons
+des collisions au niveau des noms.
+
+Signature de fonctions
+Nous pouvons éviter ce genre de collision si nous utilisons un identifiant adapté à la « signature » de la méthode :
+par exemple une concaténation du nom de la fonction et des types de ses arguments dans l'ordre.
