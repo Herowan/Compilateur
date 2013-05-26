@@ -5,8 +5,12 @@ option k=3;
 
 -- les attributs semantiques
 inh source : MJAVASourceFile for PROGRAMME;
+
 inh tds :TDS for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF, BLOC,SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST, SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX, F,FX, ARGS, ARGSX;
           		          -- je crois qu'il faut enlever tout les trucs avec un X à la fin 
+syn superclass : INFO for SUPER;
+
+
 -- les terminaux 
 space separateur is  "[\r\n\t ]+";     
 space comm is  "\/\/[^\n]*\n";
@@ -95,19 +99,40 @@ end
 local
     i : INFOCLASS ;
 do
+
     i := DEFCLASSE^tds.chercherGlobalement(ident^txt);
     if i /= nil then
        error(class_existe_deja, ident^txt);
     else    
-      -- creer un type
-     i := new INFOCLASS(ident^txt);                 --il faut donner la liste des attributs et des méthodes
+      -- creer une classe
+     i := new INFOCLASS(ident^txt, SUPER^superclass);   --il faut donner la liste des attributs et des méthodes et sa classe mère
+                                      -- qui seront probablemnt des attribut synthétisé
      call DEFCLASSE^tds.inserer(ident^txt,  i);
     end
 end
 }
 
-SUPER ->;
-SUPER -> extend ident;
+SUPER -> #classmere;
+#classmere{
+do
+SUPER^superclass:=nil;
+end
+}
+SUPER -> extend ident #gen;
+
+#gen {
+local
+    i : INFOCLASS ;
+do
+    i := SUPER^tds.chercherGlobalement(ident^txt);
+    if i = nil then
+       error(class_non_existe, ident^txt);
+    else    
+      -- donner le nom de la classe mère à la classe fille
+     SUPER^superclass:=i;               
+    end
+end
+}
 CORPS -> aco DEFS acf;
 -- les attributs
 DEFS ->;
