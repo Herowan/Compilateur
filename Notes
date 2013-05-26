@@ -19,7 +19,8 @@ Pour la tds
 -  t:= BLOC^tds; // maitenant pour les blocs: tout bloc aura sa propore table
 INSTS^tds:= new TDS(t);
 
-Remarque sur la Surcharge
+Remarque sur la Surcharge (youssra c'est pour toi cette remarque puisque c'est toi qui fait la classe method, il faut
+ajouter au nom de la methode les types de ses paramètres par exemple creerPoint(int x, int y) => creerPoint_int_int)
 
 Certains langages permettent d'utiliser un même nom pour différentes fonctions pour autant que leurs arguments 
 diffèrent en nombre et/ou en types. Nous devons donc alors maintenir une collection comme valeur, car nous aurons
