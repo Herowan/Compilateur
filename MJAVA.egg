@@ -67,7 +67,7 @@ end
 #tds{
 do
 -- creer la table pour les classes du programme
- t:= new TDS_prog(nil);
+ t:= new TDS(nil);
 -- transmettre la table à CLASSES
 CLASSES^tds:=t;
 end
@@ -82,13 +82,27 @@ end
 CLASSES ->;
 CLASSES -> DEFCLASSE CLASSES;
 -- definition d'une classe
-DEFCLASSE -> classe ident SUPER #tds CORPS;
+DEFCLASSE -> classe ident SUPER #tds CORPS #gen;
 global
   t: TDS;
 #tds{
 do
    t :=  new TDS(DEFCLASSE^tds);
    CORPS^tds := t;
+end
+}
+#gen {
+local
+    i : INFOCLASS ;
+do
+    i := DEFCLASSE^tds.chercherGlobalement(ident^txt);
+    if i /= nil then
+       error(class_existe_deja, ident^txt);
+    else    
+      -- creer un type
+     i := new INFOCLASS(ident^txt);                 --il faut donner la liste des attributs et des méthodes
+     call DEFCLASSE^tds.inserer(ident^txt,  i);
+    end
 end
 }
 
@@ -101,7 +115,8 @@ DEFS ->  DEF DEFS;
 -- attribut
 DEF ->  TYPE ident pv;
 -- methode (fonction) 
-DEF ->  TYPE ident paro PARFS parf BLOC;
+DEF ->  TYPE ident paro PARFS parf  BLOC;
+
 -- methode (procedure)
 DEF ->  void ident paro PARFS parf BLOC;
 -- constructeur
@@ -117,7 +132,15 @@ PARFSX -> ;
 PARFSX -> virg PARF PARFSX ;
 PARF -> TYPE ident ;
 -- corps de methode et bloc d'instructions
-BLOC -> aco INSTS acf ;
+BLOC -> aco #tds INSTS acf ;
+global
+ t:TDS;
+#tds{
+do
+t:= BLOC^tds;
+INSTS^tds:= new TDS(t);
+end
+}
 -- instructions
 INSTS -> ;
 INSTS -> INST INSTS ;
