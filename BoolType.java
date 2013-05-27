@@ -1,8 +1,8 @@
 package mjc.mcjava;
 
-public class BoolType extends Type{
+public class BoolDTYPE extends DTYPE{
 
-	public BoolType() {
+	public BoolDTYPE() {
 		super("bool",1);
 	}
 }
