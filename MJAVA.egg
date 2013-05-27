@@ -103,7 +103,7 @@ global
 #tds{
 do
    t :=  new TDS(DEFCLASSE^tds);
-   CORPS^tds := t;
+   CORPS^tds := t;  -- on devrait pas rajouter la tds des classes meres ?
 end
 }
 #gen {
