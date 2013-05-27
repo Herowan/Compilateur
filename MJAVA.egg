@@ -15,6 +15,12 @@ inh tds :TDS for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
 syn superclass : INFO for SUPER;
 syn type : Type for TYPE;
 
+syn code : STRING for INSTS, INST;
+inh hcode : STRING for INSTS, INST;
+
+syn adr : INTEGER for INSTS, INST;
+inh hadr: INTEGER for INSTS, INST;
+
 -- les terminaux 
 space separateur is  "[\r\n\t ]+";     
 space comm is  "\/\/[^\n]*\n";
@@ -207,10 +213,33 @@ INSTS^tds:= new TDS(t);
 end
 }
 -- instructions
-INSTS -> ;
-INSTS -> INST INSTS ;
+INSTS -> #gen;
+#gen{
+do 
+  INSTS^adr := INSTS^hadr;
+  INSTS^code := "";
+}
+
+INSTS -> INST #adr INSTS #gen;
+
+#adr{
+do 
+ INSTS^hadr := INST^code;
+ end
+ }
+
+#gen{
+do 
+
+INSTS^adr := INSTS1^adr;
+INSTS^code := INST^code + INSTS1^code;
+end
+}
+
+
 -- declaration de variable locale avec ou sans init
-INST-> TYPE ident pv ;
+INST-> TYPE ident pv ;  --rien a faire ?!
+
 INST-> TYPE ident affect E pv ;
 -- instruction expression
 INST -> E pv ;
