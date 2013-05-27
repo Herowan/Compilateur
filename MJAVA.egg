@@ -6,10 +6,14 @@ option k=3;
 -- les attributs semantiques
 inh source : MJAVASourceFile for PROGRAMME;
 
-inh tds :TDS for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF, BLOC,SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST, SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX, F,FX, ARGS, ARGSX;
-          		          -- je crois qu'il faut enlever tout les trucs avec un X à la fin 
+inh tds :TDS for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
+                 BLOC,SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST,
+                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
+                 F,FX, ARGS, ARGSX;
+           -- je crois qu'il faut enlever tout les trucs avec un X à la fin 
+           
 syn superclass : INFO for SUPER;
-
+syn type : Type for TYPE;
 
 -- les terminaux 
 space separateur is  "[\r\n\t ]+";     
@@ -146,10 +150,46 @@ DEF ->  TYPE ident paro PARFS parf  BLOC;
 DEF ->  void ident paro PARFS parf BLOC;
 -- constructeur
 DEF -> ident  paro PARFS parf BLOC;
+
 -- les types
-TYPE-> int ;
-TYPE-> bool ;
-TYPE-> ident ;
+
+TYPE-> int #type;
+#type{
+do 
+TYPE^type := new IntType();
+}
+
+TYPE-> bool #type;
+#type{
+do 
+TYPE^type := new BoolType();
+}
+
+TYPE-> ident #type;
+#type{
+do 
+local
+   i : INFO ;
+    it : INFOTYPE;
+ do
+    -- rechercher l'ident   
+    i := TYPE^tds.chercherGlobalement(ident^txt);
+    if i = nil then
+      error(type_non_existant, ident^txt);
+    else
+       match i
+       with INFOTYPE then
+         it := i ;
+         TYPE^type :=  it.getType();
+       else
+          error(not_a_type, ident^txt);
+       end
+    end
+  end
+}
+
+
+}
 -- parametres de methodes
 PARFS -> ;
 PARFS -> PARF PARFSX ;
