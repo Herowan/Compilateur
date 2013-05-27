@@ -240,7 +240,26 @@ end
 -- declaration de variable locale avec ou sans init
 INST-> TYPE ident pv ;  --rien a faire ?!
 
-INST-> TYPE ident affect E pv ;
+INST-> TYPE ident affect E pv #gen;
+
+#gen{  ici !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+local
+
+ i : INFO ;
+do
+    i := INST^tds.chercherGlobalement(ident^txt);
+    if i /= nil then
+       error(B_00, ident^txt);
+    else    
+      -- creer un type
+     i := new INFOTYPE(TYPE^type);
+     call INST^tds.inserer(ident^txt,  i);
+     INST^adr := INST^hadr ;
+     INST^code := "";
+    end
+end
+}
+
 -- instruction expression
 INST -> E pv ;
 -- bloc d'instructions
