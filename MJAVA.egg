@@ -156,13 +156,13 @@ DEF -> ident  paro PARFS parf BLOC;
 TYPE-> int #type;
 #type{
 do 
-TYPE^type := new IntType();
+TYPE^type := new IntDTYPE();
 }
 
 TYPE-> bool #type;
 #type{
 do 
-TYPE^type := new BoolType();
+TYPE^type := new BoolDTYPE();
 }
 
 TYPE-> ident #type;
