@@ -1,6 +1,6 @@
 package mjc.mcjava;
 
-public class Type {
+public class DTYPE {
 
 		// inutilisable avec EGG
 		// final private DTYPE entier = new DTYPE("entier",4);
@@ -19,7 +19,7 @@ public class Type {
 			return nom;
 		}
 
-		public Type(String n, int t) {
+		public DTYPE(String n, int t) {
 			nom = n;
 			taille = t;
 		}
