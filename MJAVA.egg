@@ -20,6 +20,7 @@ inh hcode : STRING for INSTS, INST;
 
 syn adr : INTEGER for INSTS, INST;
 inh hadr: INTEGER for INSTS, INST;
+inh liste : LTYPES for PARFS, PARF, PARFSX; 
 
 -- les terminaux 
 space separateur is  "[\r\n\t ]+";     
@@ -144,16 +145,68 @@ do
 end
 }
 CORPS -> aco DEFS acf;
+#tds {
+do
+DEFS^tds := CORPS^tds ;
+end
+}
 -- les attributs
 DEFS ->;
 DEFS ->  DEF DEFS;
 -- attribut
-DEF ->  TYPE ident pv;
+DEF ->  TYPE ident pv #tds;
+#tds {
+local 
+i : INFO;
+do
+  i := DEF^tds.chercherGlobalement(ident^txt);
+    if i /= nil then
+       error(attr_existe_deja, ident^txt);
+    else    
+      -- creer un attribut
+     i := new INFOTYPE(TYPE^type);   --ou ptetr new INFOATTR(ident^txt, TYPE^type)
+                                     -- a voir selon les classes a ecrire
+     call DEF^tds.inserer(ident^txt,  i);
+    end
+end
+}
+
 -- methode (fonction) 
-DEF ->  TYPE ident paro PARFS parf  BLOC;
+DEF ->  TYPE ident paro PARFS parf  BLOC #tds;
+#tds {
+local 
+i : INFO;
+do
+  i := DEF^tds.chercherGlobalement(ident^txt);
+    if i /= nil then
+       error(methode_existe_deja, ident^txt);
+    else    
+      -- creer un attribut
+     i := new INFOMETHODE(TYPE^type,PARFS^liste);  
+     call DEF^tds.inserer(ident^txt,i);
+    end
+end
+}
 
 -- methode (procedure)
-DEF ->  void ident paro PARFS parf BLOC;
+DEF ->  void ident paro PARFS parf BLOC #tds;
+#tds {
+local 
+i : INFO;
+do
+  i := DEF^tds.chercherGlobalement(ident^txt);
+    if i /= nil then
+      -- faire match ici , si trouve infoAttr pas de probleme 
+      -- si trouve infoMethode on teste si la mm liste de param -> erreur sinn pas de probleme
+      error(methode_existe_deja, ident^txt);
+    else    
+      
+     i := new INFOMETHODE(new VOIDTYPE() ,PARFS^liste);  
+     call DEF^tds.inserer(ident^txt,i);
+    end
+end
+}
+
 -- constructeur
 DEF -> ident  paro PARFS parf BLOC;
 
@@ -198,10 +251,36 @@ local
 }
 -- parametres de methodes
 PARFS -> ;
-PARFS -> PARF PARFSX ;
-PARFSX -> ;
-PARFSX -> virg PARF PARFSX ;
-PARF -> TYPE ident ;
+PARFS -> PARF PARFSX #params;
+#params{
+
+do
+PARFS^liste := PARFSX^liste.inserer(PARF^type);
+
+end
+}
+PARFSX -> #params;
+#params{
+do
+PARFSX^liste := new LTYPES();
+end
+}
+
+PARFSX -> virg PARF PARFSX #params;
+#params{
+
+do
+PARFSX^liste := PARFSX1^liste.inserer(PARF^type);
+
+end
+}
+PARF -> TYPE ident #param;
+#param{
+do
+PARF^type := TYPE^type;
+end
+}
+
 -- corps de methode et bloc d'instructions
 BLOC -> aco #tds INSTS acf ;
 global
