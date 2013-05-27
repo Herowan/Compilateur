@@ -1,5 +1,4 @@
 
-
 public class INFO {
   // le type
 	protected DTYPE type;
