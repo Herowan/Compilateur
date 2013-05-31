@@ -1,79 +1,102 @@
-/** Classe Methode ou INFOMethod, cad TDS de la methode */
+package mjc.gc;
 
+import java.util.ArrayList;
 
-public class Method {
+public class INFOCLASS  extends INFO{ 
 
-    /* attributs */
-    boolean isMainMethod;
-    ArrayList<Attribut> liste_params;
-    ArrayList<Attribut> liste_varlocales;
-    TYPE t_retour;
-    String name;
-
-
-    // constructeur d'un constructeur
-    public Method(String name,ArrayList<Attribut> l){
-        this.liste_params = l;
-        this.name = name;
-        this.isMainMethod = false ;
-    }
-
-    // constructeur d'une procedure
-    public Method(String name, ArrayList<Attribut> l, Type type ){
-        this.liste_params = l;
-        this.name = name;
-        this.isMainMethod = name.equals("main") && type==null && (l==null || l.size()==0) ;//voidtype a ajouter
-        if type != null t_retour = type;
-        liste_varlocales = new ArrayList<Attribut>();
-    }
-
-
-    public boolean isConstructeur(){
-    return t_retour==null;
-    }
-
-    public Type getType(){
-        return t_retour;
-    }
-
-    public void setType(Type t){
-        this.t_retour = t;
-    }
-
-    public ArrayList<Attribut> getParams(){
-        return this.liste_params;
-    }
-
-    public void addParam(Attribut a){
-        this.liste_params.add(a);
-    }
-    public Attribut chercherLocalement(String nom,Type t){
-        Iterator<Attribut> i = liste_varlocales.iterator();
-        while(i.hasNext()){
-            if(i.nom == nom && i.type == t) return i;
-        }
-        Iterator<Attribut> j = liste_params.iterator();
-        while(j.hasNext()){
-            if(j.nom == nom && j.type == t) return j;
-        }
-
-        return null;
-    }
-
-    public ArrayList<Attribut> getVarlocales(){
-        return this.liste_varlocales;
-    }
-
-    public void addVarlocale(Attribut a){
-        this.liste_varlocales.add(a);
-    }
-
-
-
-
-
-        
-
-
-
+    public ArrayList<INFOATTRIBUTE> attributs;  // plutot tds d'attribut
+	public ArrayList<INFOMETHOD> methodes; // a revoir si séparer de constructeurs !
+	public INFOCLASS ClasseMere;
+	boolean hasMain;
+	String name;
+	// penser a import , faire une liste des import , utile pourquoi?
+    	
+//ajouter une méthode getType() qui renvoie un DTYPE ou il ya le nom de la classe	
+	
+	public INFOCLASS(String name){	
+		this.name = name;
+		this.attributs = new ArrayList<INFOATTRIBUTE>();
+		this.methodes = new ArrayList<INFOMETHOD>();		
+	}
+	
+	public INFOCLASS(String name, INFOCLASS mere){
+		this.name = name;
+		this.attributs = new ArrayList<INFOATTRIBUTE>();
+		this.methodes = new ArrayList<INFOMETHOD>();	
+		this.ClasseMere = mere; 
+	}
+	
+	public boolean addMethode(INFOMETHOD m){		
+		if (isDefined(m != null)) { return false;}
+		else {
+			methodes.add(m);
+			return true;
+		}
+	}
+	
+	public INFOMETHOD getMethod(String name){
+		for (INFOMETHOD m : methodes)
+			if (m.name.equals(name))
+				return m;
+		   
+		 if (ClasseMere != null)
+			 return ClasseMere.getMethod(name);
+		
+			return null;
+		
+	}
+	public boolean addAttribute(INFOATTRIBUTE a){
+		if (isDefined(a != null)) {return false;}
+		else {
+			attributs.add(a);
+			return true;
+		}
+	}
+	
+	public INFOATTRIBUTE getattribute(String name){
+		for (INFOATTRIBUTE a : attributs)
+			if (a.name.equals(name))
+				return a;
+		    if (ClasseMere !=null)
+		    	return ClasseMere.getAttribute(name);
+		    
+		return null;
+	}
+	//traitement du extends
+	public boolean SetParent(INFOCLASS c){ //retour d'un message d'erreur en cas d'erreur
+		
+		if (c!=null)
+			{ClasseMere = c;
+			return true;}
+			
+		else
+		{	return false;}		
+	}
+	
+	//sert pour le cas de Point p = pt; Point Colore p = pt , a voir encore !
+	
+	@Override
+	public boolean equals(Object o){
+	
+		if (o == null) {return false;}
+		
+		if (this.equals(o))
+			return true;
+		if (ClasseMere != null)
+		 return ClasseMere.equals(o);
+		
+		return false;
+		
+	}
+	
+	//utile si on veut redéclarer une méthode main ou qu'on veuille éxecuter une classe sans main => Error !
+	public boolean hasMain () { return hasMain; }
+	
+	public boolean isDefined(INFOMETHOD m){ //ca marche pas , faudra redéfinir equals dans Method.java !!
+		for (INFOMETHOD a : methodes)
+			if (a.equals(m))
+				return true;
+		return false;
+	}
+	
 }
