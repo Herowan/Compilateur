@@ -44,4 +44,5 @@ On commence les types:
    - Pour les variables locales on ne cherche pas dans la tds des attributs.
    
    -On doit ajouter les méthodes et attributs et la classe mère à la INFOCLASS au niveau java et pas que à la tds.
+et on doit faire la même chose pour INFOATTRIbute et infomethod...
    -Pourquoi setparent dans infoclass est une fonction je l'ai changé en methode.
