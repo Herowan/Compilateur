@@ -42,3 +42,5 @@ Ce qu'on a fait(01/06):
 On commence les types:
    - 
    - Pour les variables locales on ne cherche pas dans la tds des attributs.
+   
+   -On doit ajouter les méthodes et attributs à la INFOCLASS au niveau java et pas que à la tds.
