@@ -29,3 +29,16 @@ des collisions au niveau des noms.
 Signature de fonctions
 Nous pouvons éviter ce genre de collision si nous utilisons un identifiant adapté à la « signature » de la méthode :
 par exemple une concaténation du nom de la fonction et des types de ses arguments dans l'ordre.
+
+
+Ce qu'on a fait(01/06):
+   - Une table de symboles pour les classes déclarée pour CLASSES et DEFCLASSE: table de prog
+   - Une table de symboles pour les méthodes, les constructeurs et les attributs d'une classe déclarée pour
+   CORPS,DEF : table de classe.
+   - Une table pour chaque bloc où on définit les variables locales. 
+   - Une table pour les paramètre tdsParam à donner aux blocs de chaque méthode.
+   - Une liste de types de paramètres à donner à la tds de la classe pour garder les signatures des méthodes.
+   
+On commence les types:
+   - 
+   - Pour les variables locales on ne cherche pas dans la tds des attributs.
