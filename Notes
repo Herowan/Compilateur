@@ -50,3 +50,4 @@ et on doit faire la même chose pour INFOATTRIbute et infomethod...
 
 Les changements effectués:
    - Dans infoClass les listes d'attributs et des méthodes sont des tds pour garder aussi le nom.
+   - Séparation entre les constructeurs et les méthodes: je ne sais pas utile ou pas.
