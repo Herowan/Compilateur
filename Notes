@@ -53,3 +53,4 @@ Les changements effectués:
    - Séparation entre les constructeurs et les méthodes: je ne sais pas utile ou pas.
    - Une fonction doit avoir une instruction retour
    - j'ai ajouté à chaque classe un constructeur par défaut.
+   - null est compatible avec tout les types.
