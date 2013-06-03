@@ -1,0 +1,1549 @@
+-- PROJET3 STL 11-12 - micro java : grammaire 
+option auto= true;
+option version = 0.0.0 ;
+option k=3;
+
+-- les attributs semantiques
+inh source : MJAVASourceFile for PROGRAMME;
+inh machine : AbstractMachine for DEFCLASSE, ENTITES, DEFINTERFACE,CORPS,DEF,DEFS,MCORPS,BLOC,E,ER,AFFX,ES,ERX,T,ESX,TX,Q,INSTS,INST,SIX,OPREL,OPADD,OPMUL,F,OPUN, ARGS, ARGSX;
+inh tds : TDS for ENTITES, DEFCLASSE, DEFINTERFACE, SUPER, CORPS, ETEND, IMPL, DEF, DEFS, TYPE, PARF,PARFS,PARFSX,BLOC,INSTS,INST,MCORPS,SIX,E,ER,ERX,ES,ESX,T,TX,F,Q,ARGS,ARGSX,AFFX;
+inh infoE : InfoEntite for SUPER, CORPS, ETEND, IMPL, DEFS, DEF, MCORPS,TYPE, PARF,PARFS,PARFSX,BLOC,INSTS,INST,SIX,E,ER,ERX,ES,ESX,T,TX,F,Q,ARGS,ARGSX,AFFX;
+inh tda : TDS for DEFS, DEF ;
+inh tdm : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, T, F, Q, AFFX, ERX, ESX, TX, ARGSX,ARGS;
+inh tdc : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, T, F, Q, AFFX, ERX, ESX, TX, ARGSX,ARGS;
+inh tvM : TvMeth for DEFS, DEF ;
+inh tdv : TDS for PARFS, PARF , PARFSX, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, T, F, Q, AFFX, ERX, ESX, TX,ARGSX,ARGS;
+inh tdsv : TDS for ARGS, ARGSX;
+inh htype : DTYPE for Q ;
+syn type : DTYPE for TYPE,E,F,T,ES,ER,Q,AFFX,ERX,ESX,TX;
+syn optype : String for OPREL,OPADD,OPMUL,OPUN;
+syn typeRetour : DTYPE for INST, INSTS, BLOC, SIX , MCORPS;
+syn code1 : String for ER,ES,T,ERX,ESX,TX,F,Q ;
+syn code2 : String for ER,ES,T,ERX,ESX,TX,F,Q ;
+syn code : String for DEFCLASSE, ENTITES, CORPS, DEFS, DEF,MCORPS,BLOC,INSTS,INST,SIX,AFFX,E,OPREL,OPADD,OPMUL,OPUN,ARGS,ARGSX; 
+inh hcode1 : String for Q;
+inh hcode2 : String for Q;
+syn codeArg :String for Q ;
+inh hvar : INFOVAR for Q;
+syn taille : INTEGER for PARFS,PARF,PARFSX ;
+inh htaille : INTEGER for MCORPS, BLOC, INSTS, INST,SIX,AFFX,ARGS,ARGSX,Q,E,ER,ES,T,ERX,ESX,OPREL,OPADD,TX,OPMUL,F;
+syn etiq : String for SIX ;
+syn adr : INTEGER for INST,INSTS;
+inh hadr : INTEGER for MCORPS,BLOC, INSTS, INST,SIX;
+inh hdep : INTEGER for PARF, PARFS,PARFSX, DEFS, DEF ;
+syn dep : INTEGER for DEF ;
+syn main : String for DEF,DEFS,CORPS, DEFCLASSE, DEFINTERFACE, ENTITES;
+
+-- les terminaux 
+
+space separateur is  "[\r\n\t ]+";     
+space comm is  "\/\/[^\n]*\n";
+sugar paro is  "\(";
+sugar parf is  "\)";
+sugar aco is  "\{";     
+sugar acf is  "\}"; 
+sugar cro is  "\["; 
+sugar crf is  "\]";
+sugar virg is  ",";
+sugar pv is  "\;";
+sugar pt is  "\.";
+sugar affect is  "=";
+sugar si is  "if";
+sugar sinon is  "else";
+sugar void is  "void";
+sugar int is  "int";
+sugar bool is  "boolean";
+sugar classe is  "class";
+sugar interface is  "interface";
+sugar etend is  "extends";
+sugar implemente is  "implements";
+sugar retour is  "return";
+sugar nouveau is  "new";
+sugar null is  "null";
+sugar inf is  "\<";
+sugar infeg is  "\<=";
+sugar sup is  "\>";
+sugar supeg is  "\>=";
+sugar eg is  "==";
+sugar neg is  "\!=";
+sugar plus is  "\+";
+sugar moins is  "\-";
+sugar ou is  "\|\|";
+sugar mult is  "\*";
+sugar div is  "\/";
+sugar mod is  "\%" ; 
+sugar et is  "\&\&";
+sugar non is  "\!";
+sugar vrai is  "true";
+sugar faux is  "false";
+term entier is  "[0-9]+";
+term ident is  "[_A-Za-z][_0-9A-Za-z]*";
+
+---------- REGLES DE PRODUCTION ----------------------------------------
+PROGRAMME -> #init ENTITES #gen ;
+global
+   machine : AbstractMachine;
+    t: TDS ;
+#init {
+local
+do
+   t := new TDS();
+   ENTITES^tds := t;
+   machine := PROGRAMME^source.getMachine();
+   ENTITES^machine := machine;
+end
+}
+#gen {
+local
+    s : String ;
+do
+    s := "\tLOADL 0\n\tLOADA "+ENTITES^main+"\n\tCALLI\n\tHALT";
+    call machine.writeCode(PROGRAMME^source.getFileName(),  s+ENTITES^code);
+end
+}
+
+ENTITES -> #gen ;
+#gen {
+do
+    -- HALT
+    ENTITES^main := "" ;
+    ENTITES^code := "" ;
+end
+}
+
+ENTITES -> DEFCLASSE ENTITES #gen ;
+#gen {
+do
+    ENTITES^code := DEFCLASSE^code + ENTITES1^code;
+    if ~DEFCLASSE^main.equals("") then
+        ENTITES^main := DEFCLASSE^main ;
+    else if ~ENTITES1^main.equals("") then
+             ENTITES^main := ENTITES1^main;
+        else
+             ENTITES^main := "" ;
+        end
+    end
+end
+}
+
+ENTITES -> DEFINTERFACE ENTITES #gen;
+#gen {
+do
+    ENTITES^code := ENTITES1^code;
+    if ~DEFINTERFACE^main.equals("") then
+        ENTITES^main := DEFINTERFACE^main ;
+    else if ~ENTITES1^main.equals("") then
+             ENTITES^main := ENTITES1^main;
+        else
+             ENTITES^main := "" ;
+        end
+    end
+end
+}
+
+-- definition d'une classe
+DEFCLASSE -> classe ident #tds SUPER CORPS #gen;
+#tds {
+local
+    i : INFO ;
+    c : TDS ;
+    i1 : InfoEntite ;
+    s : String ;
+do
+    i := DEFCLASSE^tds.chercherLocalement(ident^txt);
+    if i/=nil then
+        error(B_00,ident^txt);
+    else
+        c := new TDS(DEFCLASSE^tds);
+        i1 := new INFOCLASSE(c,ident^txt);
+        call DEFCLASSE^tds.inserer(ident^txt,i1);
+        SUPER^infoE := i1 ;
+        CORPS^infoE := i1 ;
+        SUPER^tds := c ;
+        CORPS^tds := c ;        
+    end    
+end
+}
+#gen {
+do
+    DEFCLASSE^code := "\n\n" + DEFCLASSE^machine.genComment("classe "+ ident^txt) + "\n\n" + CORPS^code;
+    DEFCLASSE^main := CORPS^main ;
+end
+}
+
+--DEFCLASSE -> classe ident etend ident CORPS ;
+--DEFCLASSE -> classe ident implemente ident CORPS ;
+DEFINTERFACE -> interface ident #tds SUPER CORPS #main ;
+#tds {
+local
+    i : INFO ;
+    c : TDS ;
+    i1 : InfoEntite ;
+do
+    i := DEFINTERFACE^tds.chercherLocalement(ident^txt);
+    if i/=nil then
+        error(B_00);
+    else
+        c := new TDS(DEFINTERFACE^tds);
+        i1 := new INFOINTERFACE(c,ident^txt);
+        call DEFINTERFACE^tds.inserer(ident^txt,i1);
+        SUPER^infoE := i1 ;
+        CORPS^infoE := i1 ;
+        SUPER^tds := c ;
+        CORPS^tds := c ;        
+    end    
+end
+}
+#main{
+do
+    DEFINTERFACE^main := CORPS^main ;
+end
+}
+
+--DEFINTERFACE -> interface ident etend ident CORPS;
+-- 1 extends maximum suivi d'un implements maximum
+SUPER -> ETEND IMPL ;
+ETEND -> ;
+ETEND -> etend ident #tds ;
+#tds {
+local
+    s : String ;
+    i : INFO ;
+    t1 : TDS ;
+    t2 : TDS ;
+    m : TvMeth ;
+do 
+    s := ETEND^infoE.getNom();
+    if s.equals(ident^txt) then 
+        error(B_01,ident^txt);
+    else 
+        i:= ETEND^tds.chercherGlobalement(ident^txt);
+        if i=nil then
+            error(B_02,ident^txt);
+        else
+            if ~(ETEND^infoE.compareTo(i)) then
+                error(B_05);
+            else
+                call ETEND^infoE.setHerite(ident^txt);
+                t1 := i.getTDA();
+                t2 := i.getTDM();
+                m := i.getMaTvMeth() ;
+                call ETEND^infoE.setAttHerite(t1);
+                call ETEND^infoE.setMethHerite(t2);
+                call ETEND^infoE.setTvMeth(m);
+            end
+        end
+    end    
+end
+}
+
+IMPL -> ;
+IMPL -> implemente ident #tds;
+#tds {
+local
+    s : String ;
+    i : INFO ;
+    it : INFOINTERFACE ;
+    c : INFOCLASSE ;
+    t : TDS ;
+do 
+    s := IMPL^infoE.getNom();
+    if s.equals(ident^txt) then 
+        error(B_01,ident^txt);
+    else 
+        i:= IMPL^tds.chercherGlobalement(ident^txt);
+        if i=nil then
+            error(B_02,ident^txt);
+        else
+            it := new INFOINTERFACE(IMPL^tds,"");
+            if ~(it.compareTo(i)) then 
+                error(B_03, ident^txt);
+            else
+                c := new INFOCLASSE(IMPL^tds,"");
+                if ~(c.compareTo(IMPL^infoE)) then
+                    error(B_04);
+                else
+                    call IMPL^infoE.setImpl(ident^txt);
+                    t := i.getTDM();
+                    call IMPL^infoE.setMethImpl(t);
+                end
+            end
+        end
+    end    
+end
+}
+
+CORPS -> aco #tds DEFS acf #gen ;
+#tds {
+local
+    t1 : TDS ;
+    t2 : TDS ;
+    t3 : TDS ;
+    i : INFOMETH ;
+    i1 : INFOMETH ;
+do
+    t1 := new TDS(CORPS^tds);
+    DEFS^tda := t1 ;
+    call CORPS^infoE.setAtt(t1);
+    t3 := new TDS(t1);   
+    t2 := new TDS(t3);
+    DEFS^tdc := t3 ;
+    DEFS^tdm := t2 ;
+    DEFS^tvM := new TvMeth() ;
+    i := new INFOMETH(t2);
+    i1 := new INFOMETH(t3);
+    call i1.setI1() ;
+    call i.setI();
+    call CORPS^infoE.setMeth(t2);
+    call CORPS^infoE.setConst(t3);
+    DEFS^hdep := 1 ;
+end
+}
+#gen {
+do
+    CORPS^code := DEFS^code ;
+    CORPS^main := DEFS^main ;
+end
+}
+
+-- les attributs
+DEFS ->  #verif ;
+#verif{
+local 
+    t1 : TDS ;
+    t2 : TDS ;
+    t3 : TDS ;
+    s  : String ;
+    s1 : String ;
+    b : boolean ;
+do
+    call DEFS^infoE.setMaTV(DEFS^tvM);
+    s := DEFS^infoE.getImplementeDe() ;
+    s1 := DEFS^infoE.getHeriteDe() ;
+    if ~(s.equals("")) then
+        t1 := DEFS^infoE.getMethImpl();
+        if ~(t1.verifierMethImpl(DEFS^tdm)) then
+            error(B_12);
+        end
+    end
+    if ~(s1.equals("")) then
+        t2 := DEFS^infoE.getAttHerite() ;
+        b := DEFS^tda.MiseAJour(t2) ;
+        call DEFS^infoE.setNbAtt(t2.size()+1);
+        if (~b) then
+            error(B_22);
+        end
+        t3 := DEFS^infoE.getMethHerite() ;
+        call t3.MiseAJourMeth(DEFS^tdm,DEFS^tvM,DEFS^infoE.getTvMeth(),DEFS^infoE.getNom()) ;
+        DEFS^code := DEFS^machine.genJumpEtiq(DEFS^infoE.getNom(),DEFS^tvM);
+        call DEFS^infoE.setMaTV(DEFS^tvM);
+    else
+         DEFS^code := DEFS^machine.genJumpEtiq(DEFS^infoE.getNom(),DEFS^tvM);
+    end
+    DEFS^main := "";
+end
+}
+
+DEFS -> DEF #dep DEFS  #gen ;
+#dep{
+do
+    DEFS1^hdep := DEFS^hdep + DEF^dep ;
+end
+}
+#gen {
+do
+    DEFS^code := DEF^code + DEFS1^code;
+    if ~DEF^main.equals("") then
+        DEFS^main := DEF^main ;
+    else if ~DEFS1^main.equals("") then
+            DEFS^main := DEFS1^main ;
+         else 
+            DEFS^main := "" ;
+         end
+    end
+end
+}
+
+-- attribut
+DEF -> TYPE ident pv  #tds ;
+#tds{
+local
+    i : INFO  ;
+    iv : INFOVAR ;
+    d : INTEGER ;
+do
+    i := DEF^tda.chercherGlobalement(ident^txt);
+    if i=nil then 
+        iv := new INFOVAR(TYPE^type, DEF^hdep , "HB");
+        call DEF^tda.inserer(ident^txt,iv);
+    else
+        error(B_06,ident^txt);
+    end
+    DEF^code := "";
+    DEF^main := "" ;
+    DEF^dep := TYPE^type.getTaille();
+    call DEF^infoE.setNbAtt(DEF^hdep);
+end
+}
+
+-- methode (fonction) 
+DEF ->  TYPE ident paro #tdv PARFS #tdm parf #adr MCORPS #type ;
+global
+    t : TDS;
+    i : INFOMETH ;
+#tdv {
+local
+do
+    t := new TDS(DEF^tdm);
+    PARFS^tdv := t ;
+    PARFS^hdep := 1 ;
+end
+}
+#tdm {
+local
+    t2 : TDS ;
+do
+    DEF^main := "";
+    if ident^txt.equals(DEF^infoE.getNom()) then
+        error(B_07,ident^txt);
+    else
+        t2 :=  new TDS(t);
+        MCORPS^tdv := t2 ;
+        i := new INFOMETH(TYPE^type,t,ident^txt,true, t2) ;
+        if (~i.verifierExistence(DEF^tdm)) then
+            call DEF^tvM.add("_"+DEF^infoE.getNom()+"_"+i.getNom());
+            call DEF^tdm.inserer(i.getNom(),i);
+        else
+            error(B_11, ident^txt);
+        end
+    end
+end
+}
+#adr{
+do
+    MCORPS^htaille := PARFS^taille ;
+    MCORPS^hadr := 3;
+end
+}
+#type{
+local
+    s : String ;
+    tr : int ;
+do
+    s := MCORPS^typeRetour.getName() ;
+    if ~s.equals("vide") then
+        if ~MCORPS^typeRetour.compareTo(TYPE^type,DEF^tds) then
+            error(B_16,s) ;
+        end
+    end
+    tr := MCORPS^typeRetour.getTaille() ;
+    DEF^code := DEF^machine.genEtiqFct(DEF^infoE.getNom()+"_"+i.getNom())+ MCORPS^code ;
+    DEF^dep := 0;
+end
+}
+
+-- methode (procedure)
+DEF ->  void ident paro #tdv PARFS #tdm parf #adr MCORPS #type ;
+global
+    t : TDS ;
+    i : INFOMETH ;
+#tdv{
+local
+do
+    t := new TDS(DEF^tdm);
+    PARFS^tdv := t ;
+    PARFS^hdep := 1 ;
+end
+}
+#tdm{
+local
+    d : DTYPE ;
+    t2 : TDS ;
+do
+    if ident^txt.equals(DEF^infoE.getNom()) then
+        error(B_07,ident^txt);
+    else
+        d := new DTYPE("void",0) ;
+        t2 :=  new TDS(t);
+        MCORPS^tdv := t2 ;
+        i := new INFOMETH(d,t,ident^txt,false, t2) ;
+        if (~i.verifierExistence(DEF^tdm)) then
+            if ident^txt.equals("main") then
+                DEF^main := "_"+DEF^infoE.getNom()+"_"+i.getNom() ;
+            else
+                DEF^main := "" ;
+            end
+            call DEF^tvM.add("_"+DEF^infoE.getNom()+"_"+i.getNom());
+            call DEF^tdm.inserer(i.getNom(),i);
+        else
+            error(B_11, ident^txt);
+        end
+    end
+end
+}
+#adr{
+do
+    MCORPS^htaille := PARFS^taille ;
+    MCORPS^hadr := 3;
+end
+}
+#type{
+local
+    s : String ;
+    tr : int ;
+do
+    s := MCORPS^typeRetour.getName() ;
+    if ~s.equals("vide") then
+        if ~s.equals("void") then
+            error(B_16,s) ;
+        end
+    end
+    tr := MCORPS^typeRetour.getTaille() ;
+    DEF^code := DEF^machine.genEtiqFct(DEF^infoE.getNom()+"_"+i.getNom())+ MCORPS^code + DEF^machine.genRetFct(PARFS^taille,tr);
+    DEF^dep := 0 ;
+end
+}
+
+-- dans classe ou dans interface
+MCORPS -> pv #verif ;
+#verif {
+local
+    i : INFOINTERFACE ;
+do
+    i := new INFOINTERFACE(MCORPS^tdv , "") ;
+    if ~(i.compareTo(MCORPS^infoE)) then
+        error(B_08);
+    end
+    MCORPS^typeRetour := new DTYPE("vide", 1);
+    MCORPS^code := "";
+end
+}
+
+MCORPS ->  BLOC #verif ;
+#verif {
+local
+    i : INFOCLASSE ;
+do
+    i := new INFOCLASSE(MCORPS^tdv , "") ;
+    if ~(i.compareTo(MCORPS^infoE)) then
+        error(B_09);
+    end
+    MCORPS^typeRetour := BLOC^typeRetour ;
+    MCORPS^code := BLOC^code ;
+end
+}
+
+-- constructeur
+DEF -> ident  paro #tdv PARFS #tdm parf #adr BLOC #type ; 
+global
+    t : TDS ;
+    i : INFOMETH ;
+#tdv{
+local
+do
+    t := new TDS(DEF^tdc);
+    PARFS^tdv := t ;
+    PARFS^hdep := 1 ;
+end
+}    
+#tdm{
+local
+
+    d : DTYPE ;
+    t2 : TDS ;
+do
+    if ident^txt.equals(DEF^infoE.getNom()) then
+        match DEF^infoE with INFOCLASSE then
+            d := new DTYPE("constr",0);
+            t2 :=  new TDS(t);
+            BLOC^tdv := t2 ;
+            i := new INFOMETH(d,t,ident^txt,false, t2) ;
+            if (~i.verifierExistence(DEF^tdc)) then
+               call DEF^tdc.inserer(i.getNom(),i);
+            else
+               error(B_11, ident^txt);
+            end
+        else
+            error(B_28);
+        end
+      else
+         error(B_10, ident^txt);
+      end
+end
+}
+#adr{
+do
+    BLOC^htaille := PARFS^taille ;
+    BLOC^hadr := 3;
+end
+}
+#type{
+local
+    s : String ;
+    tr : int ;
+do
+    s := BLOC^typeRetour.getName() ;
+    if ~s.equals("void") then
+        error(B_16,s) ;
+    end
+    tr := BLOC^typeRetour.getTaille() ;
+    DEF^code := DEF^machine.genEtiqFct(DEF^infoE.getNom()+"_"+i.getNom())+ BLOC^code + DEF^machine.genRetFct(PARFS^taille,tr);
+    DEF^main := "" ;
+    DEF^dep := 0 ;
+end
+}
+
+-- les types
+TYPE-> int  #type ;
+#type{
+do
+    TYPE^type := new DTYPE("entier",1);
+end
+}
+
+TYPE-> bool #type ;
+#type{
+do
+    TYPE^type := new DTYPE("booleen",1);
+end
+}
+
+TYPE-> ident #type ;
+#type{
+local
+    i : INFO;
+    s : String ;
+do
+    i := TYPE^tds.chercherGlobalement(ident^txt);
+    if i=nil then
+        error(B_02,ident^txt);
+    else
+        match i 
+        with INFOCLASSE then
+            TYPE^type := i.getType();
+        else
+            error(B_14,ident^txt);
+        end
+    end
+end
+}
+
+-- parametres de methodes
+PARFS ->  #gen ;
+#gen{
+do
+    PARFS^taille := 0 ;
+end
+}
+
+PARFS -> PARF #hdep PARFSX #gen ;  
+#hdep{
+local
+do
+    PARFSX^hdep := PARFS^hdep+PARF^taille ;
+end
+}
+#gen{
+do
+    PARFS^taille := PARF^taille + PARFSX^taille ;
+end
+}
+
+PARFSX -> #gen ;
+#gen{
+do
+    PARFSX^taille := 0 ;
+end
+}
+
+PARFSX -> virg PARF #hdep PARFSX #gen ;
+#hdep{
+local
+do
+    PARFSX1^hdep := PARFSX^hdep + PARF^taille ;
+end
+}
+#gen{
+do
+    PARFSX^taille := PARF^taille + PARFSX1^taille ;
+end
+}
+
+PARF ->  TYPE ident  #tds ;
+#tds{
+local
+    i : INFO ;
+    iv : INFOVAR ;
+do
+    i := PARF^tdv.chercherGlobalement(ident^txt);
+    if i/=nil then
+        error(B_06,ident^txt);
+    else
+        iv := new INFOVAR(TYPE^type,0-PARF^hdep,"LB");
+        call PARF^tdv.inserer(ident^txt,iv);
+    end
+    PARF^taille := TYPE^type.getTaille() ;
+end
+}
+
+-- corps de methode et bloc d'instructions
+BLOC ->  aco INSTS acf  #typeR ;
+#typeR {
+local
+do
+    BLOC^typeRetour := INSTS^typeRetour ;
+    BLOC^code := INSTS^code ;
+end
+}
+
+-- instructions
+INSTS -> #typeR ;
+#typeR {
+local
+do
+    INSTS^typeRetour := new DTYPE("void",0);
+    INSTS^code := "";
+    INSTS^adr := INSTS^hadr ;
+end
+}
+
+INSTS -> INST #adr INSTS #typeR ;
+#adr{
+do
+     INSTS1^hadr := INST^adr;
+end
+}
+#typeR {
+local
+    s : String ;
+do
+    s := INSTS1^typeRetour.getName() ;
+    if s.equals("void") then 
+        INSTS^typeRetour := INST^typeRetour ;
+    else 
+        INSTS^typeRetour := INSTS1^typeRetour ;
+    end
+    INSTS^code := INST^code + INSTS1^code;
+    INSTS^adr := INSTS1^adr;
+end
+}
+
+-- declaration de variable locale avec ou sans init
+INST->  TYPE ident AFFX pv #tds ;
+#tds{
+local
+    i : INFO ;
+    d : DTYPE ;
+    iv : INFOVAR ;
+    s : String ;
+    s1 : String ;
+do
+    s1 := "" ;
+    i := INST^tdv.chercherGlobalement(ident^txt);
+    if i /= nil then
+        error(B_06, ident^txt);
+    else 
+        d := AFFX^type ;
+        if d /= nil then 
+        s := d.getName() ;
+         if ~AFFX^type.compareTo(TYPE^type, INST^tdv) then
+            match TYPE^type with TClasse then
+               if ~s.equals("null") then
+                 error(B_19, AFFX^type.getName(), TYPE^type.getName());
+               end
+            else
+                error(B_19, AFFX^type.getName(), TYPE^type.getName());
+            end
+         end
+        end
+        iv := new INFOVAR(TYPE^type, INST^hadr ,"LB");
+        call INST^tdv.inserer(ident^txt,iv);
+        --génération de code
+        if (AFFX^code.equals("") ) then 
+            s1 := INST^machine.genDecl(ident^txt, iv);
+        else
+            match TYPE^type with TClasse then
+              s1 := INST^machine.genDecl(ident^txt, iv,AFFX^code)+ INST^machine.genTv(INST^hadr,AFFX^type.getName());
+            else
+              s1 := INST^machine.genDecl(ident^txt, iv,AFFX^code);
+            end
+        end  
+    end
+    INST^code := s1 ;
+    INST^typeRetour := new DTYPE("void",0);
+    INST^adr := INST^hadr + TYPE^type.getTaille();
+end
+}
+
+-- instruction expression
+INST -> E pv #typeR;
+#typeR{
+local
+do
+    INST^typeRetour := new DTYPE("void",0);
+    INST^code := E^code ;
+    INST^adr := INST^hadr;
+end
+}
+
+-- bloc d'instructions
+INST ->  #tds BLOC  #typeR ;
+#tds{
+local
+    t : TDS ;
+do
+    t := new TDS(INST^tdv);
+    BLOC^tdv := t ;
+end
+}
+#typeR {
+local
+do
+    INST^typeRetour := BLOC^typeRetour ;
+    INST^code := BLOC^code ;
+    INST^adr := INST^hadr ;
+end
+}
+
+-- conditionnelle
+INST ->  si paro E parf #tds BLOC SIX #typeR #gen ;
+#tds{
+local
+    t : TDS ;
+do
+   if ~E^type.compareTo(new DTYPE("booleen",1)) then
+      error(B_15, E^type.getName());
+   end
+    t := new TDS(INST^tdv);
+    BLOC^tdv := t ;
+end
+}
+#typeR {
+local
+    s : String ;
+do
+    s := SIX^typeRetour.getName() ;
+    if s.equals("vide") then
+        INST^typeRetour := BLOC^typeRetour ;
+    else    
+        if ~BLOC^typeRetour.compareTo(SIX^typeRetour, INST^tdv) then
+            if ~SIX^typeRetour.compareTo(BLOC^typeRetour, INST^tdv) then
+                 error(B_13,BLOC^typeRetour.getName(),SIX^typeRetour.getName());
+            else 
+                 INST^typeRetour := BLOC^typeRetour ;
+            end 
+        else
+            INST^typeRetour := SIX^typeRetour ;
+        end
+    end
+end
+}
+#gen{
+do
+    INST^code := INST^machine.genIf(E^code, BLOC^code,SIX^etiq ) + SIX^code;
+    INST^adr := INST^hadr;
+end
+}
+
+SIX ->   sinon #tds BLOC #typeR;
+#tds{
+local
+    t : TDS ;
+do
+    t := new TDS(SIX^tdv);
+    BLOC^tdv := t ;
+end
+}
+#typeR{
+local
+do
+    SIX^typeRetour := BLOC^typeRetour ;
+    SIX^etiq := "sinon" ;
+    SIX^code := SIX^machine.genElse(BLOC^code) + SIX^machine.genFinIf();
+end
+}
+
+SIX -> #typeR ;
+#typeR {
+local
+do
+    SIX^typeRetour := new DTYPE("vide",1) ;
+    SIX^etiq := "fin" ;
+    SIX^code := SIX^machine.genFinIf();
+end
+}
+
+-- return
+INST ->  retour E pv #type;
+#type{
+do
+   INST^typeRetour := E^type ;
+   INST^code := E^code + INST^machine.genRetFct(INST^htaille,E^type.getTaille());
+   INST^adr := INST^hadr;
+end
+}
+
+-- les expressions
+E -> ER AFFX #type ;
+#type{
+local
+    d : DTYPE ;
+    s :String ;
+do
+    d := AFFX^type ;
+    if  d/= nil then
+        s := d.getName() ;
+        if ~d.compareTo(ER^type,E^tdv) & ~s.equals("null") then
+             error(B_19, AFFX^type.getName(), ER^type.getName());
+        end
+    end
+    E^type := ER^type;
+    if AFFX^code = "" then
+        E^code := ER^code2;
+    else
+        E^code := AFFX^code + ER^code1 ;
+    end
+end
+}
+
+-- affectation
+AFFX ->  affect ER #type;
+#type{
+do
+    AFFX^type := ER^type;
+    AFFX^code := ER^code2; 
+end
+}
+
+AFFX -> #type;
+#type{
+do
+    AFFX^type := nil;
+    AFFX^code := "";
+end
+}
+
+-- relation
+ER ->   ES ERX #type #gen ;
+#type{
+do
+    if ERX^type /= nil then
+        if ~ERX^type.compareTo(ES^type) then
+             error(B_19, ERX^type.getName(), ES^type.getName());
+        end
+        ER^type := new DTYPE("booleen",1) ;
+    else
+         ER^type := ES^type;
+    end
+end
+}
+#gen {
+do
+    ER^code1 := ES^code1 + ERX^code1 ;
+    ER^code2 := ES^code2 + ERX^code2 ;
+end
+}
+
+ES ->  T ESX #type;
+#type{
+do
+    if ESX^type /= nil then
+        if ~ESX^type.compareTo(T^type) then
+             error(B_19, ESX^type.getName(), T^type.getName());
+        end
+    end
+    ES^type := T^type;
+    ES^code1 := T^code1 + ESX^code1 ;
+    ES^code2 := T^code2 + ESX^code2 ;
+end
+}
+
+ERX ->  OPREL ES #optype ;
+#optype{
+local
+    s : String ;
+do
+    s := OPREL^optype;
+    if ES^type.compareTo("entier") | ES^type.compareTo("booleen") then
+        if ~s.equals("mixte") then
+            if ~ES^type.compareTo(s) then
+                error(B_17);
+            end
+        end
+    else
+        error(B_17);
+    end
+    ERX^type := ES^type;
+    ERX^code1 := ES^code1 + OPREL^code;
+    ERX^code2 := ES^code2 + OPREL^code;
+end
+}
+
+ERX -> #type;
+#type{
+do
+    ERX^type := nil;
+    ERX^code1 := "";
+    ERX^code2 := "";
+end
+}
+
+OPREL -> inf #optype ;
+#optype{
+do
+    OPREL^optype := "entier";
+    OPREL^code := OPREL^machine.genInf();
+end
+}
+OPREL -> infeg #optype ;
+#optype{
+do
+    OPREL^optype := "entier";
+    OPREL^code := OPREL^machine.genInfEg();
+end
+}
+OPREL -> sup #optype ;
+#optype{
+do
+    OPREL^optype := "entier";
+    OPREL^code := OPREL^machine.genSup();
+end
+}
+OPREL -> supeg #optype ;
+#optype{
+do
+    OPREL^optype := "entier";
+    OPREL^code := OPREL^machine.genSupEg();
+end
+}
+OPREL -> eg #optype ;
+#optype{
+do
+    OPREL^optype := "mixte";
+    OPREL^code := OPREL^machine.genEg();
+end
+}
+OPREL -> neg #optype ;
+#optype{
+do
+    OPREL^optype := "mixte";
+    OPREL^code := OPREL^machine.genNeq();
+end
+}
+
+-- addition, ...
+ESX -> OPADD T ESX #type;
+#type{
+do
+    if ESX1^type = nil then
+        if ~T^type.compareTo(OPADD^optype) then
+            error(B_17);
+        end
+    else    
+        if ~T^type.compareTo(ESX1^type) then
+            error(B_17) ;
+        end       
+    end
+    ESX^type := T^type ;
+    ESX^code1 := T^code1 + OPADD^code + ESX1^code1;
+    ESX^code2 := T^code2 + OPADD^code + ESX1^code2;
+end
+}
+
+ESX -> #type ;
+#type{
+do
+    ESX^type := nil;
+    ESX^code1 := "";
+    ESX^code2 := "";
+end
+}
+
+OPADD -> plus #optype ;
+#optype{
+do
+    OPADD^optype := "entier";
+    OPADD^code := OPADD^machine.genAddition();
+end
+}
+
+OPADD -> moins #optype ;
+#optype{
+do
+    OPADD^optype := "entier";
+    OPADD^code := OPADD^machine.genSoustraction();
+end
+}
+
+OPADD -> ou #optype ;
+#optype{
+do
+    OPADD^optype := "booleen";
+    OPADD^code := OPADD^machine.genOu();
+end
+}
+
+T ->  F TX #type;
+#type{
+local
+do
+    if TX^type /= nil then
+        if ~TX^type.compareTo(F^type) then
+            error(B_19, TX^type.getName(), F^type.getName());
+        end
+    end
+    T^type := F^type;
+    T^code1 := F^code1+TX^code1 ;
+    T^code2 := F^code2+TX^code2 ;
+end
+}
+
+-- multiplication, ...
+TX ->   OPMUL F #type;
+#type{
+do
+    if ~F^type.compareTo(OPMUL^optype) then
+        error(B_17);
+    else
+        TX^type := F^type;
+    end
+    TX^code1 := F^code1 + OPMUL^code ;
+    TX^code2 := F^code2 + OPMUL^code ;
+end
+}
+
+TX -> #type;
+#type{
+do
+    TX^type := nil;
+    TX^code1 := "";
+    TX^code2 := "";
+end
+}
+
+OPMUL -> mult #optype ;
+#optype{
+do
+    OPMUL^optype := "entier";
+    OPMUL^code := OPMUL^machine.genMult();
+end
+}
+
+OPMUL -> div #optype ;
+#optype{
+do
+    OPMUL^optype := "entier";
+    OPMUL^code := OPMUL^machine.genDiv();
+end
+}
+
+OPMUL -> mod #optype ;
+#optype{
+do
+    OPMUL^optype := "entier";
+    OPMUL^code := OPMUL^machine.genMod();
+end
+}
+
+OPMUL -> et #optype ;
+#optype{
+do
+    OPMUL^optype := "booleen";
+    OPMUL^code := OPMUL^machine.genEt();
+end
+}
+
+-- expressions de base
+F -> entier  #type ;
+#type {
+do
+    F^type := new DTYPE("entier",1);
+    F^code1 := F^machine.genEntier(entier^txt);
+    F^code2 := F^machine.genEntier(entier^txt);
+end
+}
+
+F -> vrai #type ;
+#type {
+do
+    F^type := new DTYPE("booleen",1);
+    F^code1 := F^machine.genVrai();
+    F^code2 := F^machine.genVrai();
+end
+}
+
+F -> faux #type ;
+#type {
+do
+    F^type := new DTYPE("booleen",1);
+    F^code1 := F^machine.genFaux();
+    F^code2 := F^machine.genFaux();
+end
+}
+
+-- unaire
+F ->  OPUN F #type ;
+#type{
+local 
+    s : String ;
+do
+    -- vérifier que l'opérateur est compatible avec l'expression
+    s := F1^type.getName();
+    if ~OPUN^optype.equals(s) then
+        error(B_17);
+    else
+        F^type := F1^type;
+    end
+    F^code1 := F1^code1 + OPUN^code ;
+    F^code2 := F1^code1 + OPUN^code ;
+end
+}
+
+OPUN -> plus #optype ;
+#optype{
+do
+    OPUN^optype := "entier";
+    OPUN^code := "";
+end
+}
+
+OPUN -> moins #optype ;
+#optype{
+do
+    OPUN^optype := "entier";
+    OPUN^code := OPUN^machine.genOpp();
+end
+}
+
+OPUN -> non #optype ;
+#optype{
+do
+    OPUN^optype := "booleen";
+    OPUN^code := OPUN^machine.genNon();
+end
+}
+
+-- null
+F -> null #type ; 
+#type{
+do
+    F^type := new DTYPE("null",1) ;
+    F^code1 := F^machine.genNull();
+    F^code2 := F^machine.genNull();
+end
+}
+
+F ->  paro E parf #type;
+#type{
+do
+    F^type := E^type;
+    F^code1 := E^code;
+    F^code2 := E^code;
+end
+}
+
+-- new
+F -> nouveau TYPE paro #tdsv ARGS #type parf #gen ;
+global
+    t : TDS ;
+    im : INFOMETH ;
+    i2 : INTEGER ;
+#tdsv{
+do
+    t := new TDS() ;
+    call t.setI(0);
+    ARGS^tdsv := t ;
+end
+}
+#type{
+local
+    i : INFO ;
+    tdsm : TDS ;
+do
+    i := F^tds.chercherGlobalement(TYPE^type.getName());
+    if i = nil then
+        error(B_02,TYPE^type.getName());
+    else
+        match i with INFOCLASSE then
+          i2 := i.getNbAtt();
+          tdsm := i.getTDC();
+            im := new INFOMETH(new DTYPE("constr",0), t, TYPE^type.getName(), false, nil);
+           if im.verifierExistence(tdsm,F^tdv) | t.isEmpty() then
+               F^type := new TClasse(TYPE^type.getName(),1) ;
+           else
+             error(B_18,TYPE^type.getName());
+           end
+        else
+            error(B_25,TYPE^type.getName()) ;
+        end
+    end
+end
+}
+#gen{
+local
+    m : INFOMETH ;
+    s :String ;
+    c : String ;
+do
+    c := F^machine.genMalloc(i2+1);
+    if t.isEmpty() then
+    else
+        m := im.getCourant() ;
+        s := m.getNom() ;
+        F^code1 := c+ARGS^code+ F^machine.genAdr(s.substring(0,s.length()-1),s,t.size()) ;
+        F^code2 := c+ARGS^code+ F^machine.genAdr(s.substring(0,s.length()-1),s,t.size()) ;
+    end
+end
+}
+
+F ->  ident #htype Q #type;
+global
+    i : INFO ;
+#htype{
+local
+    d : DTYPE;
+    t : TDS ;
+    t1 : TDS ;
+    t2 : TDS ;
+    s1 : String ;
+    s2 : String ;
+do
+    i := F^tdv.chercherGlobalement(ident^txt);
+    if i/=nil then
+       match i with INFOVAR then
+          d := i.getType();
+          Q^htype := d;
+          s2 := i.getReg(); 
+          match d with TClasse then
+            Q^hvar := i ;
+            if s2.equals("LB") then
+                Q^hcode1 := F^machine.genAdr(i.getDep(), i.getReg()) ;
+                Q^hcode2 := F^machine.genAdr(i.getDep(), i.getReg()) ;
+            else
+                Q^hcode1 := F^machine.genSetAtt(F^htaille+1 ,i.getDep(),d.getTaille());
+                Q^hcode2 := F^machine.gengetAtt(F^htaille+1 ,i.getDep(),d.getTaille());
+            end
+          else    
+                if s2.equals("HB") then
+                    Q^hcode1 := F^machine.genSetAtt(F^htaille+1 ,i.getDep(),d.getTaille());
+                    Q^hcode2 := F^machine.gengetAtt(F^htaille+1 ,i.getDep(),d.getTaille());
+                else
+                    Q^hcode1 := F^machine.genWrite(i.getDep(),s2,d.getTaille()) ;
+                    Q^hcode2 := F^machine.genMem(i.getDep(),s2,d.getTaille()) ;
+                end         
+
+          end
+       end
+    else 
+       s1 := F^infoE.getHeriteDe();
+       t := F^tdm.ListeMethode(ident^txt);
+       if t.isEmpty() then
+          if s1.equals("") then
+             error(B_20,ident^txt);
+          else
+             t1 := F^infoE.getAttHerite() ;
+             i := t1.chercherLocalement(ident^txt);
+             if i /= nil then
+                 match i with INFOVAR then 
+                      d := i.getType() ;
+                      Q^htype := d ;
+                      Q^hcode1 := F^machine.genSetAtt(F^htaille+1,i.getDep(),d.getTaille());
+                      Q^hcode2 := F^machine.gengetAtt(F^htaille+1,i.getDep(),d.getTaille());
+                 end
+             else
+                 t2 := F^infoE.getMethHerite() ;
+                 t := t2.ListeMethode(ident^txt);
+                 if t.isEmpty() then
+                    error(B_20,ident^txt);
+                 else
+                    Q^htype := new ListeMeth(ident^txt,1,t,F^infoE.getNom());
+                    Q^hcode1 :=  F^machine.genMeth(F^infoE.getNom());
+                    Q^hcode2 := F^machine.genMeth(F^infoE.getNom());
+                 end
+             end
+          end
+       else
+          Q^htype := new ListeMeth(ident^txt,1,t,F^infoE.getNom());
+          Q^hcode1 := F^machine.genMeth(F^infoE.getNom());
+          Q^hcode2 := F^machine.genMeth(F^infoE.getNom());
+       end
+    end
+end
+}
+#type{
+local
+do
+    F^type := Q^type ;
+    F^code1 := Q^codeArg+Q^code1 ;
+    F^code2 := Q^codeArg+Q^code2 ;
+end            
+}
+
+-- Q = qualificateur de variable
+Q ->  #type ;
+#type{
+do
+    Q^type := Q^htype ;
+    Q^code1 := Q^hcode1 ;
+    Q^code2 := Q^hcode2 ;
+    Q^codeArg := "" ;
+end
+}
+
+-- acces attribut
+Q ->  pt ident #htype Q #type;
+#htype{
+local
+    d : DTYPE;
+    i : INFO ;
+    i1 : INFO ;
+    t1 : TDS ;
+    t2 : TDS ;
+    t3 : TDS ;
+    s : String ;
+do
+    d := Q^htype ;
+    match d 
+    with TClasse then
+        i := Q^tdv.chercherGlobalement(d.getName());
+        if i/=nil then
+           match i with InfoEntite then
+             t1 := i.getTDA() ;
+             t2 := i.getTDM() ;
+             i1 := t1.chercherLocalement(ident^txt);
+             if i1 /= nil then
+                match i1 with INFOVAR then 
+                     Q1^htype := i1.getType() ;
+                     Q1^hcode1 := Q^machine.genAdrField(i1.getDep());
+                     Q1^hcode2 := Q^machine.genComment("valeur attribut")+Q^machine.genAdrField(i1.getDep())+Q^machine.genReadMem(1);
+                     Q1^hvar := i1 ;
+                end
+             else 
+                t3 := t2.ListeMethode(ident^txt);
+                if t3.isEmpty() then
+                    error(B_26,ident^txt,i.getNom());
+                else
+                    Q1^htype := new ListeMeth(ident^txt,1,t3,d.getName());
+                    Q1^hcode1 := Q^machine.genMeth(Q^hvar.getDep(),Q^hvar.getReg());
+                    Q1^hcode2 := Q^machine.genMeth(Q^hvar.getDep(),Q^hvar.getReg());
+                end
+             end  
+           end
+        else
+            error(B_20,ident^txt);    
+        end
+     else
+        error(B_24,d.getName());
+     end
+end
+}
+#type{
+local
+do
+    Q^type := Q1^type ;
+    Q^code1 := Q^hcode1+ Q1^codeArg +Q1^code1 ;
+    Q^code2 := Q^hcode2+ Q1^codeArg +Q1^code2 ;
+    Q^codeArg := "";
+end
+}
+
+-- arguments d'appel de methode
+Q ->  paro #tdsv ARGS parf #htype Q #type ;
+global
+    t : TDS ;
+    k : INTEGER ;
+#tdsv{
+do
+    t := new TDS() ;
+    call t.setI(0);
+    ARGS^tdsv := t ;
+end
+}
+#htype{
+local
+    d : DTYPE ;
+    i : INFOMETH ;
+    b : boolean ;
+    d1 : DTYPE ;
+    s : String ;
+do
+    k := 0 ;
+    d := Q^htype ;
+    match d with ListeMeth then
+        i := new INFOMETH(new DTYPE("void",0),t,d.getName(),false,nil);
+        b := i.verifier(d.getTdsMeth(),Q^tdv);
+        if b then
+            d1 := i.getTypeCourant() ;
+            s := d1.getName() ;
+            k := i.getNumCourant();
+            if s.equals("constr") then 
+                error(B_27);
+            else if s.equals("void") then
+                 Q1^htype := new TClasse(d.getClasse(),1);
+                 else
+                 Q1^htype := d1;
+                 end
+            end
+        else
+            error(B_23);
+        end
+    else
+        error(B_21);
+    end
+end
+}
+#type{
+do
+    Q^type := Q1^type;
+    Q^code1 := Q1^code2+Q^machine.genComplement(k-1, t.size()) ;
+    Q^code2 := Q1^code2+Q^machine.genComplement(k-1, t.size()) ;
+    Q^codeArg := ARGS^code ;
+end
+}
+ARGS -> E #tdv ARGSX  #gen ;
+#tdv{
+local
+    i : int;
+do
+    i := ARGS^tdsv.getI();
+    call ARGS^tdsv.inserer("v"+i,new INFO (E^type));
+    call ARGS^tdsv.setI(ARGS^tdsv.getI()+1);
+end
+}
+#gen{
+do
+    ARGS^code := ARGSX^code+E^code  ;
+end
+}
+
+ARGS -> #gen ;
+#gen{
+do
+    ARGS^code := "" ;
+end
+}
+
+ARGSX ->   virg E #tdv ARGSX #gen ;
+#tdv{
+local
+    i : int;
+do
+    i := ARGSX^tdsv.getI();
+    call ARGSX^tdsv.inserer("v"+i,new INFO (E^type));
+    call ARGSX^tdsv.setI(ARGSX^tdsv.getI()+1);
+end
+}
+#gen{
+do
+    ARGSX^code := ARGSX1^code+E^code  ;
+end
+}
+
+ARGSX -> #gen ;
+#gen{
+do
+    ARGSX^code := "" ;
+end
+}
+
+end
