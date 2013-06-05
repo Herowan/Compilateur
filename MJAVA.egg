@@ -1,51 +1,70 @@
 -- PROJET3 STL 12-13 - micro java : grammaire 
 option auto= true;
-option version = 0.0.0 ;
+option version = 0.0.1 ;
 option k=3;
 
 -- les attributs semantiques
 inh source : MJAVASourceFile for PROGRAMME;
 
 --table des classes
-inh tds :TDS for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
+inh tds :TDS for   
+                 INSTS,INST,--BLOC, PARFS,PARFSX, PARF, 
+                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
+                 F,FX, ARGS, ARGSX;
+           -- je crois qu'il faut enlever tout les trucs avec un X Ã  la fin 
+  
+ 
+ --table ou on met toutes les classes
+ inh tdsProg: TDS for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
                  BLOC,SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST,
                  SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
                  F,FX, ARGS, ARGSX;
-           -- je crois qu'il faut enlever tout les trucs avec un X à la fin 
  --table des attributs          
 --inh tda : TDS for DEFS, DEF ;
- --table des méthodes
---inh tdm : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, F, Q,
+ --table des mÃ©thodes
+--inh tdm : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, F, 
   --                 AFFX, ERX, ESX, TX, ARGSX,ARGS;
  --table des constructeurs
---inh tdc : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, F, Q,
+--inh tdc : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, F, 
     --                AFFX, ERX, ESX, TX, ARGSX,ARGS;
 
 --table de parametres
-syn param: COUPLE for PARF;
-inh tdsParamh :TDS for BLOC,INSTS,INST, SIX,E, ER, ES, F, Q, AFFX,FACTEUR,TERME, ERX, ESX, TX, ARGSX,ARGS;
+syn param: String for PARF;
+inh tdsParamh :TDS for BLOC,INSTS,INST, SIX,E, ER, ES, F, AFFX,FACTEUR,TERME, ERX, ESX, TX, ARGSX,ARGS,FX;
 syn tdsParam: TDS for PARFS,PARFSX;
 
-syn superclass : INFO for SUPER;
-syn type : DTYPE for TYPE, PARF, FACTEUR, E, ER,ES,AFFX,TERME,F,FX, ERX, ESX, TX, ARGSX,ARGS,
+syn superclass : INFOCLASS for SUPER;
+syn type : DTYPE for TYPE, PARF, FACTEUR, E, ER,ES,AFFX,TERME,F,FX, ERX, ESX, TX,
 OPREL,OPADD,OPMUL,OPUN ;
---type de retour de la méthode
-inh typeR : DTYPE for BLOC, INSTS,INST;
+--type de retour de la mÃ©thode
+inh typeR : DTYPE for BLOC, INSTS,INST,SIX;
+--signature d une fonction
+syn signature : LTYPES for PARFS, PARFSX;
+ 
+syn listArg : LTYPES for ARGSX,ARGS;
 
-inh hcode : STRING for INSTS, INST;
-
-syn adr : INTEGER for INSTS, INST;
-inh hadr: INTEGER for INSTS, INST; 
-syn listParam : LTYPES for PARFS, PARFSX; 
---nom de la classe
-inh classname: STRING for CORPS, DEFS,DEF;
+--les infos sur de la classe a donner au corps de la classe
+inh infoclass : INFOCLASS for CORPS, DEFS,DEF,INSTS,INST,BLOC,TYPE,
+                 PARFS,PARFSX, PARF, 
+                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
+                 F,FX, ARGS, ARGSX;
+                               
+--les infos sur de la methode a donner au corps de la classe
+inh infoMethod : INFOMETHOD for INSTS,INST,BLOC,
+                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
+                 F,FX, ARGS, ARGSX;               
+inh nom :String for FX;
+inh htype: DTYPE for FX;
 
 
 --code
-syn code : STRING for  BLOC,INSTS, INST, E,TERME, FACTEUR, FX, TERMES;
+--syn code : STRING for  BLOC,INSTS, INST, E,TERME, FACTEUR, FX, TERMES;
+--inh hcode : STRING for INSTS, INST;
 
+--syn adr : INTEGER for INSTS, INST;
+--inh hadr: INTEGER for INSTS, INST; 
 --TAM
-inh tam : TAM for BLOC, INSTS,  INST, TERME, FACTEUR, FX, TERMES;
+--inh tam : TAM for BLOC, INSTS,  INST, TERME, FACTEUR, FX, TERMES;
 
 -- les terminaux 
 space separateur is  "[\r\n\t ]+";     
@@ -94,13 +113,13 @@ term ident is  "[_A-Za-z][_0-9A-Za-z]*";
 ---------- REGLES DE PRODUCTION ----------------------------------------
 PROGRAMME -> #init #tds CLASSES #gen;
 global
-   machine : AbstractMachine;
+  -- machine : AbstractMachine;
    t: TDS;
 
 #init {
 local
 do
-   machine := PROGRAMME^source.getMachine();
+ --  machine := PROGRAMME^source.getMachine();
 end
 }
 
@@ -108,14 +127,14 @@ end
 do
 -- creer la table pour les classes du programme
  t:= new TDS();
--- transmettre la table à CLASSES
-CLASSES^tds:=t;
+-- transmettre la table Ã  CLASSES
+CLASSES^tdsProg:=t;
 end
 }
 #gen {
 local
 do
-  call machine.writeCode(PROGRAMME^source.getFileName(), "; GC"); 
+--  call machine.writeCode(PROGRAMME^source.getFileName(), "; GC"); 
 end
 }
 
@@ -124,30 +143,38 @@ CLASSES -> DEFCLASSE CLASSES;
 -- definition d'une classe
 DEFCLASSE -> classe ident SUPER #tds CORPS #gen;
 global
-  t: TDS;
+--  t: TDS;
 #tds{
+local
+    ic : INFOCLASS ;
+    i:INFO;
 do
    
-   t :=  new TDS(DEFCLASSE^tds);
-   CORPS^tds := t;  -- on devrait pas rajouter la tds des classes meres ?
-   CORPS^classname:=ident^txt;
-end
-}
-#gen {
-local
-    i : INFOCLASS ;
-do
-
-    i := DEFCLASSE^tds.chercherGlobalement(ident^txt);
+ --  t :=  new TDS(DEFCLASSE^tdsProg);
+ --  CORPS^tds := t;  -- on devrait pas rajouter la tds des classes meres ?
+--   CORPS^classname:=ident^txt;   
+    i := DEFCLASSE^tdsProg.chercherGlobalement(ident^txt);
     if i /= nil then
        error(class_existe_deja, ident^txt);
     else    
       -- creer une classe
-     i := new INFOCLASS(ident^txt, SUPER^superclass);   --il faut donner la liste des attributs et des méthodes et sa classe mère
-                                      -- qui seront probablemnt des attribut synthétisé
-     call DEFCLASSE^tds.inserer(ident^txt,  i);
+      if(SUPER^superclass=nil) then
+           ic := new INFOCLASS(ident^txt);
+      else
+           ic := new INFOCLASS(ident^txt, SUPER^superclass);   --il faut donner la liste des attributs et des methodes et sa classe mere
+      end                               -- qui seront probablemnt des attribut synthetise
+     call DEFCLASSE^tdsProg.inserer(ident^txt,  ic);
+--     call ic.setParent(SUPER^superclass);
+     CORPS^infoclass:=ic;
 
     end
+end
+}
+#gen {
+
+do
+
+
 end
 }
 
@@ -161,32 +188,31 @@ SUPER -> extend ident #gen;
 
 #gen {
 local
-    i : INFOCLASS ;
+    i : INFO ;
+    ic: INFOCLASS;
 do
-    i := SUPER^tds.chercherGlobalement(ident^txt);
+    i := SUPER^tdsProg.chercherGlobalement(ident^txt);
     if i = nil then
        error(class_non_existe, ident^txt);
-    else    
-      -- donner le nom de la classe mère à la classe fille
-     SUPER^superclass:=i;               
+    else   
+      match i 
+      with INFOCLASS then
+        ic:=i; 
+      -- donner le nom de la classe mere a  la classe fille
+        SUPER^superclass:=ic;  
+      else
+        error(pas_une_classe,ident^txt );
+      end             
     end
 end
 }
 CORPS -> aco #tables DEFS acf;
 #tables{
 local
- --tabA:TDS;
- --tabM:TDS;
--- tabC:TDS;
--- tab:TDS;
--- i:INFOCLASS ;
+
  
 do
---tab:=CORPS^tds;
---i:=tab.getParent();
---tabA:=new TDS(i);--il faut donner la classe mere de la classe tds
---tabM:=new TDS(CORPS^tds);
---tabC:=new TDS(CORPS^tds);
+
 
 end
 }
@@ -201,14 +227,21 @@ DEF ->  TYPE ident pv #tds;
 #tds {
 local 
 i : INFO;  
+ia: INFOATTRIBUTE;
+t:TDS;
 do
-  i := DEF^tds.chercherGlobalement(ident^txt);                                            
+t:=DEF^infoclass.getAttributes();
+i := t.chercherLocalement(ident^txt);   -- possiblite de redefinition dun attribut dans la classe
+                                        -- fille                                         
     if i /= nil then
-       error(attr_existe_deja, ident^txt);
+       error(attribut_existe_deja, ident^txt);
     else    
       -- creer un attribut
-     i := new INFOATTRIBUT( TYPE^type);           -- à modifier pour TAM
-     call DEF^tds.inserer(ident^txt,  i);
+     ia := new INFOATTRIBUTE(ident^txt,TYPE^type);--,dep,reg);           --   modifier pour TAM
+ --    call DEF^tds.inserer(ident^txt,  ia);
+     --mise Ã  jour de la tds des attributs
+     call DEF^infoclass.addAttribute(ident^txt,ia);
+
     end
 end
 }
@@ -218,18 +251,28 @@ DEF ->  TYPE ident paro PARFS parf #tds  BLOC ;
 #tds {
 local 
 i : INFO;
+im: INFOMETHOD;
+t:TDM;
+s: String;
 do
-  i := DEF^tds.chercherLocalement(ident^txt,PARFS^listParam);-- quand il fait la recherche globale il cherche 
-                                        --dans la classe mere aussi s'il trouve il peut redéfinir
-    if i /= nil then
-       error(methode_existe_deja, ident^txt);
-                                      
-    else    
-      -- creer ue méthode           
-     i := new INFOMETHODE(TYPE^type,PARFS^listParam);  -- à modifier  TAM
-     call DEF^tds.inserer(ident^txt,i);
-      BLOC^tdsParamh:=PARFS^tdsParam;
-      BLOC^typeR:=TYPE^type;
+ t:=DEF^infoclass.getMethods();
+ i := t.chercherLocalement(ident^txt,PARFS^signature);
+ if i /= nil then
+    error(methode_existe_deja, ident^txt);
+ else    
+     -- creer une methode           
+    im := new INFOMETHOD(ident^txt,TYPE^type,PARFS^signature,true);  -- a modifier  TAM
+    --ajouter la liste des parametres(une TDS) a l infoMethod 
+    call im.setListParam(PARFS^tdsParam);
+  --  call DEF^tds.inserer(ident^txt,im);
+     --mise a jour de la tds des methodes
+    s:=im.getName();
+    call DEF^infoclass.addMethod(s,im);
+     
+    --on donne l infoMethod au bloc 
+    BLOC^infoMethod:=im;
+    BLOC^tdsParamh:=PARFS^tdsParam;
+    BLOC^typeR:=TYPE^type;
     end
 end
 }
@@ -240,15 +283,26 @@ DEF ->  void ident paro PARFS  parf  #tds BLOC ;
 #tds {
 local 
 i : INFO;
+im:INFOMETHOD;
+t:TDM;
+s:String;
 do
-  i := DEF^tds.chercherLocalement(ident^txt,PARFS^listParam); 
-    if i /= nil then
+ t:=DEF^infoclass.getMethods();
+ i := t.chercherLocalement(ident^txt,PARFS^signature);
+ if i /= nil then
       error(methode_existe_deja, ident^txt);
     else    
-     i := new INFOMETHODE(new VOIDTYPE() ,PARFS^listParam);  
-     call DEF^tds.inserer(ident^txt,i);
-      BLOC^tdsParamh:=PARFS^tdsParam;
-      BLOC^typeR:=new VOIDTYPE();
+     im := new INFOMETHOD(ident^txt,new VoidDTYPE() ,PARFS^signature,false);
+     --ajouter la liste des parametres(une TDS) a l infoMethod 
+    call im.setListParam(PARFS^tdsParam);  
+--    call DEF^tds.inserer(ident^txt,im);
+    s:=im.getName();
+    call DEF^infoclass.addMethod(s,im);
+     
+    --on donne l infoMethod au bloc
+    BLOC^infoMethod:=im;         --on peut enlever les deux lignes suivantes
+    BLOC^tdsParamh:=PARFS^tdsParam;
+    BLOC^typeR:=im.getType();
     end
 end
 }
@@ -258,32 +312,55 @@ DEF -> ident  paro PARFS parf #tds BLOC ;
 #tds{
 local
 i:INFO;
+im:INFOMETHOD;
+nomClass:String;
+t:TDM;
+a:String;
+ti:DTYPE;
+s:String;
 do 
-if (ident^txt.equals( DEF^classname)) then
- i := new INFOMETHOD(nil ,PARFS^listParam);               ----yoousrra!!!!tu le regrettra
- call DEF^tds.inserer(ident^txt,i);
- BLOC^tdsParamh:=PARFS^tdsParam;
- BLOC^typeR:=nil;                                           --ou le type de la classe
-else
+nomClass:=DEF^infoclass.getName();
+ if (ident^txt.equals( nomClass)) then
+  t:= DEF^infoclass.getConstructors();
+
+  i:= t.chercherLocalement(ident^txt,PARFS^signature);
+  if (i=nil) then 
+    i:= t.chercherGlobalement(ident^txt,PARFS^signature);
+    if (i/=nil) then
+        --traitement de super
+    end
+    im := new INFOMETHOD(ident^txt,new ClassDTYPE(ident^txt) ,PARFS^signature,false);
+        --ajouter la liste des parametres(une TDS) a l infoMethod 
+    call im.setListParam(PARFS^tdsParam);               
+--    call DEF^tds.inserer(ident^txt,im);
+    s:=im.getName();
+    call DEF^infoclass.addConstructor(s,im);
+    
+    --on donne l infoMethod au bloc
+    BLOC^infoMethod:=im; 
+    BLOC^tdsParamh:=PARFS^tdsParam;
+    BLOC^typeR:=im.getType();
+  else
+      error(construc_existe_deja, ident^txt);  
+  end                                          
+ else
       error(construc_name, ident^txt);  
-end
  end
+end
  }
 -- les types
 
 TYPE-> int #type;
 #type{
 do 
---     TYPE^type := new DTYPE("entier", 1);
-TYPE^type := new IntDTYPE(); --pourquoi créer des classes pour tous les types normaux
-                            -- c'est pas ce qu'on a fait en Tp et je vois pas trop l'interet
+    TYPE^type := new IntDTYPE(); 
 end
 }
 
 TYPE-> bool #type;
 #type{
 do 
-TYPE^type := new BoolDTYPE();  -- meme remarque
+    TYPE^type := new BoolDTYPE();  
 end
 }
 
@@ -292,44 +369,46 @@ TYPE-> ident #type;   --les classes
 
 local
    i : INFO ;
-    it : INFOCLASS;
- do
-    -- rechercher l'ident   
-    i := TYPE^tds.chercherGlobalement(ident^txt);  
+   it : INFOCLASS;
+do
+    -- rechercher l'ident dans la tds du programme  
+    i := TYPE^tdsProg.chercherGlobalement(ident^txt);  
     if i = nil then
-      error(type_non_existant, ident^txt);
+      error(ident_non_existant, ident^txt);
     else
        match i
        with INFOCLASS then     
          it := i ;
          TYPE^type :=  it.getType();
        else
-          error(not_a_type, ident^txt);
+          error(ident_non_existant, ident^txt);
        end
     end
-  end
+end
 }
 
 
 
 -- parametres de methodes
-PARFS -> #paramlist;   -- méthode sans paramètre on crée une liste qui reste vide
+PARFS -> #paramlist;   -- methode sans parametre on cree une liste qui reste vide
 #paramlist{
 do 
-PARFS^listParam:=new LTYPES();
+PARFS^signature:=nil;--new LTYPES();
 PARFS^tdsParam:= new TDS();
 end
 }
 
 PARFS -> PARF PARFSX #params;
 #params{
-
+local
+i: INFOVAR ;  --ou INFOATTRIBUTE
 do
-call PARFSX^tdsParam.inserer(PARF^param.getString(),PARF^param.getINFO());
+call PARFSX^signature.inserer(PARF^type); 
+PARFS^signature := PARFSX^signature;
+i:= new INFOVAR(PARF^type);                     --peut etre a changer en infoattribute
+call PARFSX^tdsParam.inserer(PARF^param,i);
 PARFS^tdsParam:=PARFSX^tdsParam;
-PARFS^listParam := PARFSX^listParam.inserer(PARF^type);  --liste est hérité !! tu dois le changer en 
-                                                --synthétisé pour écrire ça
-                                                --il faut donner l'ident aussi?
+
 
 end
 }
@@ -337,56 +416,64 @@ PARFSX -> #params;
 #params{
 do
 PARFSX^tdsParam:=new TDS();
-PARFSX^listParam := new LTYPES(); --même remarque
+PARFSX^signature := new LTYPES(); 
 end
 }
 
 PARFSX -> virg PARF PARFSX #params;
 #params{
-
+local
+i: INFOVAR ;  --ou INFOATTRIBUTE
 do
-call PARFSX1^tdsParam.inserer(PARF^param.getString(),PARF^param.getINFO());
+call PARFSX1^signature.inserer(PARF^type);      -- methode add de arrayList attention a l'ordre
+                                                -- add ajoute en fin de liste donc j ai change en add(0,elt) pour ajouter en tete
+PARFSX^signature :=PARFSX1^signature;
+
+i:= new INFOVAR(PARF^type);                     --peut etre a changer en infoattribute
+call PARFSX1^tdsParam.inserer(PARF^param,i);
 PARFSX^tdsParam:=PARFSX1^tdsParam;
-call PARFSX1^listParam.inserer(PARF^type);
-PARFSX^listParam :=PARFSX1^listParam;
+
 end
 }
 PARF -> TYPE ident #param;
 #param{
-local
-i: INFOTYPE;
 do
-i:= new INFOTYPE(TYPE^type);
-PARF^param:= new COUPLE(ident^txt,i);
-PARF^type := TYPE^type;                                --changer type en synthétisé
-end                                                    --elever PARF de listParam
+PARF^type := TYPE^type;   
+PARF^param:= ident^txt;                             
+end                                                    
 }
 
 -- corps de methode et bloc d'instructions
 BLOC -> aco #tds INSTS acf #gen;
-global
- t:TDS;
+
 #tds{
 do
-t:= BLOC^tds;
-INSTS^tds:= new TDS(t);                              --TAM
+--t:= BLOC^tds;
+INSTS^tds:= new TDS();                              --TAM
 
 end
 }
 #gen {
 do
-   write "; tds:\n" + t;
-   write "; taille des locales = " + (INSTS^adr - BLOC^hadr)+ "\n";         --copiée du BLOC
-   BLOC^code := INSTS^code + BLOC^tam.genFree(INSTS^adr - BLOC^hadr);
+--   write "; tds:\n" + t;
+--   write "; taille des locales = " + (INSTS^adr - BLOC^hadr)+ "\n";         --copiee du BLOC
+--   BLOC^code := INSTS^code + BLOC^tam.genFree(INSTS^adr - BLOC^hadr);
 end
 }
 
 -- instructions
 INSTS -> #gen;
 #gen{
-do 
-  INSTS^adr := INSTS^hadr;
-  INSTS^code := "";
+do
+-- une fonction doit avoir une instruction de retour
+if (INSTS^infoMethod.isFunction()) then
+    if ~(INSTS^infoMethod.getReturnInst()) then
+    error(func_retour);
+    end
+end
+--  INSTS^adr := INSTS^hadr;
+--  INSTS^code := "";
+end
 }
 
 INSTS -> INST #adr INSTS #gen;
@@ -394,15 +481,15 @@ INSTS -> INST #adr INSTS #gen;
 #adr {
 do
   --write "@ courante = " + INST^adr + "\n";
-  INSTS1^hadr := INST^adr;
+--  INSTS1^hadr := INST^adr;
 end
 }
 
 
 #gen {
 do
-  INSTS^adr := INSTS1^adr;
-  INSTS^code := INST^code + INSTS1^code;
+--  INSTS^adr := INSTS1^adr;
+--  INSTS^code := INST^code + INSTS1^code;
 end
 }
 
@@ -413,9 +500,16 @@ INST-> TYPE ident pv #gen ;
 global 
     i : INFO ;
     iv : INFOVAR ;
+
 #gen{ 
+local
+    t: TDS;
+    t2:TDS;
 do
-    i:=INST^tdsParamh.chercherGlobalement(ident^txt);
+    t:=INST^infoMethod.getListParam();
+    --recherche dans la tds ou il y a les parametres de la methodes
+   -- i:=INST^tdsParamh.chercherGlobalement(ident^txt);                                                     -- truc a enlever tdsParamh
+    i:= t.chercherGlobalement(ident^txt);
     if i/=nil then
       error(var_egal_param,ident^txt);
     else
@@ -423,11 +517,19 @@ do
         if i /= nil then
           error(var_existe_deja, ident^txt);
         else
-            -- creer une variable
-          iv := new INFOVAR(TYPE^type, INST^hadr, "LB");                      -- a vérifier
-          call INST^tds.inserer(ident^txt,  iv);
-          INST^adr := INST^hadr + TYPE^type.getTaille();                    -- a vérifier
-          INST^code := INST^tam.genDecl(ident^txt, iv, E^code);         --TAM
+        -- creer une variable
+        iv := new INFOVAR(TYPE^type);--, INST^hadr, "LB");                      -- a verifier
+
+        --ajouter dans la tds du bloc
+        call INST^tds.inserer(ident^txt,  iv);
+        
+        --ajouter la variable a la tds des variables de infoMethod
+        t2:=INST^infoMethod.getListVar();
+        call t2.inserer(ident^txt,  iv);
+        
+        
+  --      INST^adr := INST^hadr + TYPE^type.getTaille();                    -- a verifier
+  --      INST^code := INST^tam.genDecl(ident^txt, iv, E^code);         --TAM
         end
      end
 end
@@ -436,16 +538,21 @@ end
 
 
 
---déclaration avec affectation
+--declaration avec affectation
 INST-> TYPE ident affect E pv #gen;
 global 
     i : INFO ;
     iv : INFOVAR ;
 
 #gen {
-
+local
+    t: TDS;
+    t2:TDS;
 do
-    i:=INST^tdsParamh.chercherGlobalement(ident^txt);
+    t:=INST^infoMethod.getListParam();
+    --recherche dans la tds ou il y a les parametres de la methodes
+   -- i:=INST^tdsParamh.chercherGlobalement(ident^txt);                                                     -- truc a enlever tdsParamh
+    i:= t.chercherGlobalement(ident^txt);
     if i/=nil then
       error(var_egal_param,ident^txt);
     else
@@ -456,10 +563,15 @@ do
             error(type_incompatible, TYPE^type, E^type);
         else
             -- creer une variable
-        iv := new INFOVAR(TYPE^type, INST^hadr, "LB");         --TAM
-        call INST^tds.inserer(ident^txt,  iv);          
-        INST^adr := INST^hadr + TYPE^type.getTaille();               --TAM
-        INST^code := INST^tam.genDecl(ident^txt, iv, E^code);        --TAM
+        iv := new INFOVAR(TYPE^type);--, INST^hadr, "LB");         --TAM
+        call INST^tds.inserer(ident^txt,  iv); 
+        
+        --ajouter la variable a la tds des variables de infoMethod
+        t2:=INST^infoMethod.getListVar();
+        call t2.inserer(ident^txt,  iv);
+                 
+ --       INST^adr := INST^hadr + TYPE^type.getTaille();               --TAM
+ --       INST^code := INST^tam.genDecl(ident^txt, iv, E^code);        --TAM
         end
      end
 end
@@ -467,16 +579,16 @@ end
 
 
 -- instruction expression
-INST -> E pv ;                                  --génération du code ,TAM
+INST -> E pv ;                                  --generation du code ,TAM
 -- bloc d'instructions
-INST -> BLOC ;                                  --génération du code ,TAM
+INST -> BLOC ;                                  --generation du code ,TAM
 
 -- conditionnelle
 INST -> si paro E parf #type  BLOC SIX #gen ;
 #gen {
 do
-    INST^adr := INST^hadr;
-    INST^code := INST^tam.genIf(E^code, BLOC^code, SIX^code) ;  --TAM 
+--    INST^adr := INST^hadr;
+--    INST^code := INST^tam.genIf(E^code, BLOC^code, SIX^code) ;  --TAM 
 end
 }
 
@@ -490,29 +602,33 @@ end
 SIX -> sinon BLOC #gen ;
 #gen{
 do
-SIX^code := BLOC^code;
+--SIX^code := BLOC^code;
                           --TAM
+ 
 end
 }
 
 SIX ->  #gen;
 #gen{
 do
-SIX^code := "";                          --TAM
+--SIX^code := "";                          --TAM
 end
 }
 -- return
 INST -> retour E pv #type ;
 #type{
+local
+i:INFOMETHOD;
+b:boolean;
 do
-
-if (INST^typeR.compareTo(new VoidTYPE())) then
-    error(pas_de_retour);
-elseif  (INST^typeR= nil)  then
-    error(pas_de_retour);
-elseif ~(INST^typeR=E^type) then
-    error(type_incompatible,INST^typeR,E^type);
+if (INST^infoMethod.isFunction()) then
+ if  ~(INST^typeR.compareTo(E^type)) then
+     error(type_incompatible,INST^typeR,E^type);
+ else
+     call INST^infoMethod.setReturnInst();
+ end
 else
+    error(pas_de_retour);
                                                             -- tam
 end
 end 
@@ -534,7 +650,7 @@ do
     end
     E^type := ER^type;
     
-                                                         --génrération de code 
+                                                         --generation de code 
 end
 }
 
@@ -549,7 +665,7 @@ AFFX -> #type ;
 #type{
 do
 AFFX^type:=nil;                       
-                                                         --génrération de code 
+                                                         --generation de code 
 end}
 
 
@@ -569,7 +685,7 @@ do
     else
       ER^type:=ES^type;
     end  
-                                                         --génrération de code 
+                                                         --generation de code 
 end
 }
 ES ->  TERME ESX #type;
@@ -585,7 +701,7 @@ do
     end
          ES^type := TERME^type;
 
-                                                         --génrération de code 
+                                                         --generation de code 
 end
 }
 ERX ->  OPREL ES #type;
@@ -602,7 +718,7 @@ do
        ERX^type := ES^type;
      end
         
-                                                         --génrération de code 
+                                                         --generation de code 
 end
 }
 
@@ -667,7 +783,7 @@ do
         end
           ESX^type := OPADD^type;
      end        
-                                                     --génrération de code 
+                                                     --generation de code 
 end
 } 
 
@@ -705,7 +821,7 @@ do
     end
      TERME^type :=FACTEUR^type;
 
-                                                         --génrération de code 
+                                                         --generation de code 
 end
 }
 -- multiplication, ...
@@ -727,7 +843,7 @@ do
         end
        TX^type := OPMUL^type;
      end        
-                                                     --génrération de code 
+                                                     --generation de code 
 end
 }
 TX -> #type;
@@ -772,7 +888,7 @@ do
      end
        FACTEUR^type := OPUN^type;
         
-                                                         --génrération de code 
+                                                         --genreration de code 
 end
 }
 OPUN -> plus #type;
@@ -796,10 +912,10 @@ end
 -- expressions de base
 FACTEUR -> entier #gen;
 #gen {
-do                                                          --copié du bloc à vérifier TAM
+do                                                         
     FACTEUR^type := new IntDTYPE();
-    FACTEUR^est_adresse := false;
-    FACTEUR^code := FACTEUR^tam.genCst(entier^txt);
+ --   FACTEUR^est_adresse := false;
+ --   FACTEUR^code := FACTEUR^tam.genCst(entier^txt);
 end
 }
 -- booleens
@@ -807,16 +923,16 @@ FACTEUR -> vrai #gen;
 #gen {
 do
   FACTEUR^type := new BoolDTYPE();
-  FACTEUR^est_adresse := false;
-  FACTEUR^code := FACTEUR^tam.genCst("1");
+--  FACTEUR^est_adresse := false;
+--  FACTEUR^code := FACTEUR^tam.genCst("1");
  end
 }
 FACTEUR -> faux #gen;
 #gen {
 do
   FACTEUR^type := new BoolDTYPE();
-  FACTEUR^est_adresse := false;
-  FACTEUR^code := FACTEUR^tam.genCst("0");
+--  FACTEUR^est_adresse := false;
+--  FACTEUR^code := FACTEUR^tam.genCst("0");
 end
 }
 
@@ -825,36 +941,257 @@ FACTEUR -> null #gen;
 #gen {
 do
   FACTEUR^type := new DTYPE("null", 0);
-  FACTEUR^est_adresse := false;
-  FACTEUR^code := FACTEUR^tam.genCst("null");
+--  FACTEUR^est_adresse := false;
+--  FACTEUR^code := FACTEUR^tam.genCst("null");
 end
 }
 
-FACTEUR -> F;
--- expression parenthésée
-F -> paro E parf ;
+FACTEUR -> F #type;
+#type{
+do
+FACTEUR^type:= F^type;                          --generation du code
+end
+}
+
+-- expression parenthÃ©sÃ©e
+F -> paro E parf #type ;
+#type{
+do
+F^type:=E^type;                           --generation du code            
+end
+}
+
 -- new
-F -> nouveau TYPE paro ARGS parf  FX;
+F -> nouveau TYPE paro ARGS parf #htype FX #type;
+#type{
+do
+F^type:=FX^type;
+end}
+#htype{
+local
+i: INFO;
+i1:INFO;
+it:INFOCLASS;
+t:TDM;
+do
+FX^nom:="";
+i:= F^tdsProg.chercherGlobalement(TYPE^type.getNom());
+match i 
+ with INFOCLASS then
+    it:=i;
+    t:=it.getConstructors();
+    i1:=t.chercherGlobalement(TYPE^type.getNom(),ARGS^listArg);
+     if (i1=nil) then
+        error(constr_existe_pas,TYPE^type.getNom(),ARGS^listArg);
+     else
+     FX^htype:=TYPE^type;--it.getType();
+     FX^infoclass := i;
+     end
+                                    --generation de code
+  else 
+     error(class_non_existe,TYPE^type);
+end
+end}
+
+
 -- objet courant
-F -> this  FX;
+F -> this #htype FX  #type;
+#htype{
+do
+FX^nom:="";
+FX^htype:=F^infoclass.getType();
+end}
+#type{
+do
+F^type:=FX^type;
+end
+}
+
 -- objet parent
-F -> super  FX;
+F -> super #htype FX #type;
+#htype{
+local
+mere:INFOCLASS;
+do
+ if (F^infoclass.hadParent()) then
+    mere:=F^infoclass.getParent();
+    FX^nom:=mere.getName();
+    FX^htype:=mere.getType();  -- va etre redefini dans la regle ou il ya les arguments
+ else
+    error(pas_de_parent,F^infoclass.getName());    
+ end
+end}
+#type{
+do
+F^type:=FX^type;
+end
+}
+
 -- acces variable, parametre, ou attribut de this
-F -> ident FX;
-FX -> ;
-FX -> pt ident FX;
+F -> ident #htype FX #type;
+#htype{
+local
+i:INFO;
+t: TDS;
+t1:TDS;
+do
+--recherche de ident dans la tds des parametres de la methode
+t:=F^infoMethod.getListParam();
+i:=t.chercherGlobalement(ident^txt);
+--i:=F^tdsParamh.chercherGlobalement(ident^txt);
+ if (i=nil) then
+    --recherche de ident dans tds du bloc cad comme variable locale
+    --on fait recherche globale 
+    i:=F^tds.chercherGlobalement(ident^txt);
+    if (i=nil)  then
+        --recherche dans les attributs de la classe et de sa classe mere
+        t1:=F^infoclass.getAttributes();
+        i:=t1.chercherGlobalement(ident^txt);
+        if (i=nil)  then
+            -- si il trouve pas , on cherche dans les methodes 
+            FX^nom:=ident^txt;
+            FX^htype:=F^infoclass.getType(); 
+        else
+            FX^htype:=i.getType();
+            FX^nom:="";
+        end     
+    else
+    FX^htype:=i.getType();
+    FX^nom:="";
+    end
+else
+    FX^htype:=i.getType();
+    FX^nom:="";
+ end
+end
+   
+}
+#type{
+do
+F^type:=FX^type;
+end
+}
+
+
+FX -> #type;
+#type{
+local
+ 
+do
+if (FX^htype=nil) then 
+    error(pas_trouve,FX^nom);
+else
+
+    FX^type:=FX^htype; 
+    end      
+end}
+
+
+FX -> pt ident #htype FX #type;
+#type{
+do
+FX^type:=FX1^type;
+end}
+#htype{
+local 
+t1:TDS;
+ia : INFO;
+ic1:INFO;
+ic2: INFOCLASS;
+typ :DTYPE;
+do
+typ:=FX^htype;
+ic1:=FX^tdsProg.chercherGlobalement(typ.getNom());
+match ic1
+ with INFOCLASS then
+ ic2:=ic1;
+ t1:=ic2.getAttributes();
+--recherche dans les attributs de la classe et de sa classe mere
+ia:=t1.chercherGlobalement(ident^txt);
+    if ia=nil then
+        FX1^nom:=ident^txt; --nom est herite
+        FX1^htype:=FX^htype;
+    else
+        FX1^nom:="";
+        FX1^htype:=ia.getType();
+     end
+end  
+end                                               --generation de code
+}
+
+
+
 -- appel methode sur objet
-FX -> paro ARGS parf FX;
+FX -> paro ARGS parf #htype FX #type;
+#type{
+do
+    FX^type:=FX1^type;
+end}
+
+#htype{
+local
+im:  INFOMETHOD;
+ic: INFOMETHOD;
+i:INFO;
+--t1: TDS;
+t2: TDM;
+t3: TDM;
+typ:DTYPE;
+ic1:INFO;
+ic2:INFOCLASS;
+do
+if (FX^nom.equals("")) then
+    error(this_error);
+end
+typ:=FX^htype;
+ic1:=FX^tdsProg.chercherGlobalement(typ.getNom());
+match ic1
+ with INFOCLASS then
+ ic2:=ic1;
+t2:=ic2.getMethods();
+t3:=ic2.getConstructors();
+--recherche dans la tds des methodes
+ im:=t2.chercherGlobalement(FX^nom,ARGS^listArg);
+    if im=nil then
+        --recherche dans la tds des constructeurs  
+       ic:=t3.chercherGlobalement(FX^nom,ARGS^listArg); 
+       if ic=nil then
+           error(methode_non_existante,FX^nom,ARGS^listArg,ic1.getName());
+       else
+           FX1^htype:=ic.getType();--pour une methode c est le type de retour
+           end
+    else
+    FX1^htype:=im.getType();
+        --    error(methode_sans_type,im.getName(),im.getType());
+
+    end
+end
+end
+}
 -- liste d'arguments d'appel de methode
-ARGS ->  E ARGSX  ;
-ARGS -> ;
-ARGSX ->   virg E ARGSX  ;
-ARGSX -> ;
+ARGS ->  E ARGSX #listArg ;
+#listArg{
+do
+call ARGSX^listArg.inserer(E^type);
+ARGS^listArg := ARGSX^listArg;
+end}
+ARGS -> #listArg; --cas d une methode sans parametres
+#listArg{
+do
+ARGS^listArg :=new LTYPES();--nil;-- 
+end}
+ARGSX ->   virg E ARGSX #listArg ;
+#listArg{
+do
+call ARGSX1^listArg.inserer(E^type);
+ARGSX^listArg := ARGSX1^listArg;
+end}
+
+ARGSX -> #listArg;
+#listArg{
+do
+ARGSX^listArg := new LTYPES();
+end}
 
 
--- liste d'arguments d'appel de methode
-ARGS ->  E ARGSX  ;
-ARGS -> ;
-ARGSX ->   virg E ARGSX  ;
-ARGSX -> ;
-
+end
