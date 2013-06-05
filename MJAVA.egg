@@ -56,13 +56,18 @@ inh infoMethod : INFOMETHOD for INSTS,INST,BLOC,
 inh nom :String for FX;
 inh htype: DTYPE for FX;
 
-
 --code
---syn code : STRING for  BLOC,INSTS, INST, E,TERME, FACTEUR, FX, TERMES;
+syn code : STRING for  DEFCLASSE, CORPS,DEFS, BLOC,INSTS, INST, DEF,E,TERME, FACTEUR, FX, TERMES;
 --inh hcode : STRING for INSTS, INST;
+-- adresses
+syn dep : INTEGER for  DEFS, DEF, BLOC, INST, INSTS, SIX ,DEFCLASSE;
+inh hdep: INTEGER for DEFS, DEF, CORPS,CLASSES, DEFCLASSE, BLOC, INST, INSTS, SIX;
 
---syn adr : INTEGER for INSTS, INST;
---inh hadr: INTEGER for INSTS, INST; 
+
+syn est_adresse : BOOLEAN for TERME, F,TX,ARGS,ARGSX, FACTEUR, FX ;
+inh hest_adresse : BOOLEAN for FX;
+
+
 --TAM
 --inh tam : TAM for BLOC, INSTS,  INST, TERME, FACTEUR, FX, TERMES;
 
@@ -111,10 +116,17 @@ term entier is  "[0-9]+";
 term ident is  "[_A-Za-z][_0-9A-Za-z]*";
 
 ---------- REGLES DE PRODUCTION ----------------------------------------
-PROGRAMME -> #init #tds CLASSES #gen;
+PROGRAMME -> #init #tds #dep CLASSES #gen;
 global
   -- machine : AbstractMachine;
    t: TDS;
+   
+#dep{
+do 
+CLASSES^hdep := 0;
+end
+}
+
 
 #init {
 local
@@ -139,9 +151,14 @@ end
 }
 
 CLASSES ->;
-CLASSES -> DEFCLASSE CLASSES;
+CLASSES -> DEFCLASSE #gen CLASSES;
+#gen{
+do
+CLASSES1^hdep := DEFCLASSE^dep ;
+end
+}
 -- definition d'une classe
-DEFCLASSE -> classe ident SUPER #tds CORPS #gen;
+DEFCLASSE -> classe ident SUPER #tds #gen1 CORPS #gen;
 global
 --  t: TDS;
 #tds{
@@ -170,13 +187,20 @@ do
     end
 end
 }
-#gen {
 
+#gen {   --generation de code !
 do
-
-
+DEFCLASSE^dep := DEFCLASSE^hdep + 1;
+DEFCLASSE^code := CORPS^code;
 end
 }
+
+#gen1{
+do
+CORPS^hdep := DEFCLASSE^hdep;
+end 
+}
+
 
 SUPER -> #classmere;
 #classmere{
@@ -206,27 +230,48 @@ do
     end
 end
 }
-CORPS -> aco #tables DEFS acf;
-#tables{
-local
 
- 
-do
+CORPS -> aco #gen1 DEFS #gen2 acf ;
 
-
+#gen1{
+do 
+DEFS^hdep := CORPS^hdep; 
 end
+}
+#gen2{ -- a revoir ensuite !
+do
+CORPS^code := DEFS^code;
+end 
 }
 
 
 -- les attributs
-DEFS ->;
+DEFS -> #gen;
+#gen{
+do
+DEFS^code := "";
+DEFS^dep := 0;
+end
+}
 
-DEFS ->  DEF DEFS;
+DEFS ->  DEF #gen DEFS #gen1 ;
+#gen{
+do
+DEFS1^hdep := DEF^dep;
+end
+}
+
+#gen1{
+do
+DEFS^code := DEF^code + DEFS1^code;
+end 
+}
+
 -- attribut
 DEF ->  TYPE ident pv #tds;
 #tds {
 local 
-i : INFO;  
+i: INFO;  
 ia: INFOATTRIBUTE;
 t:TDS;
 do
