@@ -1,72 +1,41 @@
--- PROJET3 STL 12-13 - micro java : grammaire 
+-- PROJET3 STL 11-12 - micro java : grammaire 
 option auto= true;
 option version = 0.0.0 ;
 option k=3;
 
 -- les attributs semantiques
 inh source : MJAVASourceFile for PROGRAMME;
-
---table des classes
-inh tds :TDS for   CORPS, DEFS, DEF,
-                 BLOC, TYPE, PARFS,PARFSX, PARF, INSTS,INST,
-                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
-                 F,FX, ARGS, ARGSX;
-           -- je crois qu'il faut enlever tout les trucs avec un X Ã  la fin 
-  
- 
- --table ou on met toutes les classes
- inh tdsProg: TDS for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
-                 BLOC,SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST,
-                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
-                 F,FX, ARGS, ARGSX;
- --table des attributs          
---inh tda : TDS for DEFS, DEF ;
- --table des mÃ©thodes
---inh tdm : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, F, 
-  --                 AFFX, ERX, ESX, TX, ARGSX,ARGS;
- --table des constructeurs
---inh tdc : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, F, 
-    --                AFFX, ERX, ESX, TX, ARGSX,ARGS;
-
---table de parametres
-syn param: String for PARF;
-inh tdsParamh :TDS for BLOC,INSTS,INST, SIX,E, ER, ES, F, AFFX,FACTEUR,TERME, ERX, ESX, TX, ARGSX,ARGS,FX;
-syn tdsParam: TDS for PARFS,PARFSX;
-
-syn superclass : INFO for SUPER;
-syn type : DTYPE for TYPE, PARF, FACTEUR, E, ER,ES,AFFX,TERME,F,FX, ERX, ESX, TX,
-OPREL,OPADD,OPMUL,OPUN ;
---type de retour de la mÃ©thode
-inh typeR : DTYPE for BLOC, INSTS,INST,SIX;
---signature d une fonction
-syn signature : LTYPES for PARFS, PARFSX;
- 
-syn listArg : LTYPES for ARGSX,ARGS;
-
---les infos sur de la classe a donner au corps de la classe
-inh infoclass : INFOCLASS for FX,CORPS, DEFS,DEF,INSTS,INST,BLOC,TYPE,
-                 PARFS,PARFSX, PARF, 
-                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
-                 F, ARGS, ARGSX;
-                               
---les infos sur de la methode a donner au corps de la classe
-inh infoMethod : INFOMETHOD for INSTS,INST,BLOC,
-                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
-                 F,FX, ARGS, ARGSX;               
-inh nom :String for FX;
-inh htype: DTYPE for FX;
-
-
---code
---syn code : STRING for  BLOC,INSTS, INST, E,TERME, FACTEUR, FX, TERMES;
---inh hcode : STRING for INSTS, INST;
-
---syn adr : INTEGER for INSTS, INST;
---inh hadr: INTEGER for INSTS, INST; 
---TAM
---inh tam : TAM for BLOC, INSTS,  INST, TERME, FACTEUR, FX, TERMES;
+inh machine : AbstractMachine for DEFCLASSE, ENTITES, DEFINTERFACE,CORPS,DEF,DEFS,MCORPS,BLOC,E,ER,AFFX,ES,ERX,T,ESX,TX,Q,INSTS,INST,SIX,OPREL,OPADD,OPMUL,F,OPUN, ARGS, ARGSX;
+inh tds : TDS for ENTITES, DEFCLASSE, DEFINTERFACE, SUPER, CORPS, ETEND, IMPL, DEF, DEFS, TYPE, PARF,PARFS,PARFSX,BLOC,INSTS,INST,MCORPS,SIX,E,ER,ERX,ES,ESX,T,TX,F,Q,ARGS,ARGSX,AFFX;
+inh infoE : InfoEntite for SUPER, CORPS, ETEND, IMPL, DEFS, DEF, MCORPS,TYPE, PARF,PARFS,PARFSX,BLOC,INSTS,INST,SIX,E,ER,ERX,ES,ESX,T,TX,F,Q,ARGS,ARGSX,AFFX;
+inh tda : TDS for DEFS, DEF ;
+inh tdm : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, T, F, Q, AFFX, ERX, ESX, TX, ARGSX,ARGS;
+inh tdc : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, T, F, Q, AFFX, ERX, ESX, TX, ARGSX,ARGS;
+inh tvM : TvMeth for DEFS, DEF ;
+inh tdv : TDS for PARFS, PARF , PARFSX, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, T, F, Q, AFFX, ERX, ESX, TX,ARGSX,ARGS;
+inh tdsv : TDS for ARGS, ARGSX;
+inh htype : DTYPE for Q ;
+syn type : DTYPE for TYPE,E,F,T,ES,ER,Q,AFFX,ERX,ESX,TX;
+syn optype : String for OPREL,OPADD,OPMUL,OPUN;
+syn typeRetour : DTYPE for INST, INSTS, BLOC, SIX , MCORPS;
+syn code1 : String for ER,ES,T,ERX,ESX,TX,F,Q ;
+syn code2 : String for ER,ES,T,ERX,ESX,TX,F,Q ;
+syn code : String for DEFCLASSE, ENTITES, CORPS, DEFS, DEF,MCORPS,BLOC,INSTS,INST,SIX,AFFX,E,OPREL,OPADD,OPMUL,OPUN,ARGS,ARGSX; 
+inh hcode1 : String for Q;
+inh hcode2 : String for Q;
+syn codeArg :String for Q ;
+inh hvar : INFOVAR for Q;
+syn taille : INTEGER for PARFS,PARF,PARFSX ;
+inh htaille : INTEGER for MCORPS, BLOC, INSTS, INST,SIX,AFFX,ARGS,ARGSX,Q,E,ER,ES,T,ERX,ESX,OPREL,OPADD,TX,OPMUL,F;
+syn etiq : String for SIX ;
+syn adr : INTEGER for INST,INSTS;
+inh hadr : INTEGER for MCORPS,BLOC, INSTS, INST,SIX;
+inh hdep : INTEGER for PARF, PARFS,PARFSX, DEFS, DEF ;
+syn dep : INTEGER for DEF ;
+syn main : String for DEF,DEFS,CORPS, DEFCLASSE, DEFINTERFACE, ENTITES;
 
 -- les terminaux 
+
 space separateur is  "[\r\n\t ]+";     
 space comm is  "\/\/[^\n]*\n";
 sugar paro is  "\(";
@@ -75,7 +44,7 @@ sugar aco is  "\{";
 sugar acf is  "\}"; 
 sugar cro is  "\["; 
 sugar crf is  "\]";
-sugar virg is  ","; 
+sugar virg is  ",";
 sugar pv is  "\;";
 sugar pt is  "\.";
 sugar affect is  "=";
@@ -85,10 +54,10 @@ sugar void is  "void";
 sugar int is  "int";
 sugar bool is  "boolean";
 sugar classe is  "class";
-sugar extend is  "extends";
+sugar interface is  "interface";
+sugar etend is  "extends";
+sugar implemente is  "implements";
 sugar retour is  "return";
-sugar this is  "this";
-sugar super is  "super";
 sugar nouveau is  "new";
 sugar null is  "null";
 sugar inf is  "\<";
@@ -111,113 +80,197 @@ term entier is  "[0-9]+";
 term ident is  "[_A-Za-z][_0-9A-Za-z]*";
 
 ---------- REGLES DE PRODUCTION ----------------------------------------
-PROGRAMME -> #init #tds CLASSES #gen;
+PROGRAMME -> #init ENTITES #gen ;
 global
    machine : AbstractMachine;
-   t: TDS;
-
+    t: TDS ;
 #init {
 local
 do
+   t := new TDS();
+   ENTITES^tds := t;
    machine := PROGRAMME^source.getMachine();
-end
-}
-
-#tds{
-do
--- creer la table pour les classes du programme
- t:= new TDS();
--- transmettre la table Ã  CLASSES
-CLASSES^tdsProg:=t;
+   ENTITES^machine := machine;
 end
 }
 #gen {
 local
+    s : String ;
 do
-  call machine.writeCode(PROGRAMME^source.getFileName(), "; GC"); 
+    s := "\tLOADL 0\n\tLOADA "+ENTITES^main+"\n\tCALLI\n\tHALT";
+    call machine.writeCode(PROGRAMME^source.getFileName(),  s+ENTITES^code);
 end
 }
 
-CLASSES ->;
-CLASSES -> DEFCLASSE CLASSES;
+ENTITES -> #gen ;
+#gen {
+do
+    -- HALT
+    ENTITES^main := "" ;
+    ENTITES^code := "" ;
+end
+}
+
+ENTITES -> DEFCLASSE ENTITES #gen ;
+#gen {
+do
+    ENTITES^code := DEFCLASSE^code + ENTITES1^code;
+    if ~DEFCLASSE^main.equals("") then
+        ENTITES^main := DEFCLASSE^main ;
+    else if ~ENTITES1^main.equals("") then
+             ENTITES^main := ENTITES1^main;
+        else
+             ENTITES^main := "" ;
+        end
+    end
+end
+}
+
+ENTITES -> DEFINTERFACE ENTITES #gen;
+#gen {
+do
+    ENTITES^code := ENTITES1^code;
+    if ~DEFINTERFACE^main.equals("") then
+        ENTITES^main := DEFINTERFACE^main ;
+    else if ~ENTITES1^main.equals("") then
+             ENTITES^main := ENTITES1^main;
+        else
+             ENTITES^main := "" ;
+        end
+    end
+end
+}
+
 -- definition d'une classe
-DEFCLASSE -> classe ident SUPER #tds CORPS #gen;
-global
-  t: TDS;
-#tds{
+DEFCLASSE -> classe ident #tds SUPER CORPS #gen;
+#tds {
 local
-    i : INFOCLASS ;
+    i : INFO ;
+    c : TDS ;
+    i1 : InfoEntite ;
+    s : String ;
 do
-   
-   t :=  new TDS(DEFCLASSE^tdsProg);
-   CORPS^tds := t;  -- on devrait pas rajouter la tds des classes meres ?
---   CORPS^classname:=ident^txt;   
-    i := DEFCLASSE^tdsProg.chercherGlobalement(ident^txt);
-    if i /= nil then
-       error(class_existe_deja, ident^txt);
-    else    
-      -- creer une classe
-     i := new INFOCLASS(ident^txt, SUPER^superclass);   --il faut donner la liste des attributs et des methodes et sa classe mÃ¨re
-                                      -- qui seront probablemnt des attribut synthÃ©tisÃ©
-     call DEFCLASSE^tdsProg.inserer(ident^txt,  i);
-     call i.setParent(SUPER^superclass);
-     CORPS^infoclass:=i;
-
-    end
+    i := DEFCLASSE^tds.chercherLocalement(ident^txt);
+    if i/=nil then
+        error(B_00,ident^txt);
+    else
+        c := new TDS(DEFCLASSE^tds);
+        i1 := new INFOCLASSE(c,ident^txt);
+        call DEFCLASSE^tds.inserer(ident^txt,i1);
+        SUPER^infoE := i1 ;
+        CORPS^infoE := i1 ;
+        SUPER^tds := c ;
+        CORPS^tds := c ;        
+    end    
 end
 }
 #gen {
-
 do
-
-
+    DEFCLASSE^code := "\n\n" + DEFCLASSE^machine.genComment("classe "+ ident^txt) + "\n\n" + CORPS^code;
+    DEFCLASSE^main := CORPS^main ;
 end
 }
 
-SUPER -> #classmere;
-#classmere{
-do
-SUPER^superclass:=nil;
-end
-}
-SUPER -> extend ident #gen;
-
-#gen {
+--DEFCLASSE -> classe ident etend ident CORPS ;
+--DEFCLASSE -> classe ident implemente ident CORPS ;
+DEFINTERFACE -> interface ident #tds SUPER CORPS #main ;
+#tds {
 local
-    i : INFOCLASS ;
+    i : INFO ;
+    c : TDS ;
+    i1 : InfoEntite ;
 do
-    i := SUPER^tdsProg.chercherGlobalement(ident^txt);
-    if i = nil then
-       error(class_non_existe, ident^txt);
-    else    
-      -- donner le nom de la classe mÃ¨re Ã  la classe fille
-     SUPER^superclass:=i;               
-    end
+    i := DEFINTERFACE^tds.chercherLocalement(ident^txt);
+    if i/=nil then
+        error(B_00);
+    else
+        c := new TDS(DEFINTERFACE^tds);
+        i1 := new INFOINTERFACE(c,ident^txt);
+        call DEFINTERFACE^tds.inserer(ident^txt,i1);
+        SUPER^infoE := i1 ;
+        CORPS^infoE := i1 ;
+        SUPER^tds := c ;
+        CORPS^tds := c ;        
+    end    
 end
 }
-CORPS -> aco #tables DEFS acf;
-#tables{
+#main{
+do
+    DEFINTERFACE^main := CORPS^main ;
+end
+}
+
+--DEFINTERFACE -> interface ident etend ident CORPS;
+-- 1 extends maximum suivi d'un implements maximum
+SUPER -> ETEND IMPL ;
+ETEND -> ;
+ETEND -> etend ident #tds ;
+#tds {
 local
- --tabA:TDS;
- --tabM:TDS;
--- tabC:TDS;
--- tab:TDS;
--- i:INFOCLASS ;
- 
-do
---tab:=CORPS^tds;
---i:=tab.getParent();
---tabA:=new TDS(i);--il faut donner la classe mere de la classe tds
---tabM:=new TDS(CORPS^tds);
---tabC:=new TDS(CORPS^tds);
-
+    s : String ;
+    i : INFO ;
+    t1 : TDS ;
+    t2 : TDS ;
+    m : TvMeth ;
+do 
+    s := ETEND^infoE.getNom();
+    if s.equals(ident^txt) then 
+        error(B_01,ident^txt);
+    else 
+        i:= ETEND^tds.chercherGlobalement(ident^txt);
+        if i=nil then
+            error(B_02,ident^txt);
+        else
+            if ~(ETEND^infoE.compareTo(i)) then
+                error(B_05);
+            else
+                call ETEND^infoE.setHerite(ident^txt);
+                t1 := i.getTDA();
+                t2 := i.getTDM();
+                m := i.getMaTvMeth() ;
+                call ETEND^infoE.setAttHerite(t1);
+                call ETEND^infoE.setMethHerite(t2);
+                call ETEND^infoE.setTvMeth(m);
+            end
+        end
+    end    
 end
 }
 
+IMPL -> ;
+IMPL -> implemente ident #tds;
+#tds {
+local
+    s : String ;
+    i : INFO ;
+    it : INFOINTERFACE ;
+    c : INFOCLASSE ;
+    t : TDS ;
+do 
+    s := IMPL^infoE.getNom();
+    if s.equals(ident^txt) then 
+        error(B_01,ident^txt);
+    else 
+        i:= IMPL^tds.chercherGlobalement(ident^txt);
+        if i=nil then
+            error(B_02,ident^txt);
+        else
+            it := new INFOINTERFACE(IMPL^tds,"");
+            if ~(it.compareTo(i)) then 
+                error(B_03, ident^txt);
+            else
+                c := new INFOCLASSE(IMPL^tds,"");
+                if ~(c.compareTo(IMPL^infoE)) then
+                    error(B_04);
+                else
+                    call IMPL^infoE.setImpl(ident^txt);
+                    t := i.getTDM();
+                    call IMPL^infoE.setMethImpl(t);
+                end
+            end
+        end
+    end    
+end
+}
 
--- les attributs
-DEFS ->;
-
-DEFS ->  DEF DEFS;
--- attribut
-DEF ->  TYPE ident pv #tds;
+CORPS -> aco #tds DEFS acf #gen ;
