@@ -59,3 +59,12 @@ Les changements effectués:
 Trucs à faire pour la génération du code:
    - ecrire genNull dans tam.java
    - Donner la taille de la classe dans DEFCLASS, taille de la classe= taille des attributs
+   
+   
+Questions:
+   - Quand on fait un new Point() on fait une allocation de mémoire de la taille des attributs de point, mais le problème 
+comment savoir cette taille avant de finir la classe.Je vous donne un exemple:
+* si dans la classe Point ou il ya x et y comme attributs
+dans un bloc de méthode je crée un Point, lors de la création il ya allocation de mémoire de taille 2.
+Mais si après cette méthode j'ajoute un attribut z, la taille de point augmente!!
+
