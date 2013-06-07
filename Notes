@@ -68,3 +68,9 @@ comment savoir cette taille avant de finir la classe.Je vous donne un exemple:
 dans un bloc de méthode je crée un Point, lors de la création il ya allocation de mémoire de taille 2.
 Mais si après cette méthode j'ajoute un attribut z, la taille de point augmente!!
 
+
+Choix pris concernant la taille de la classe:
+   - Lors de la définition d'une classe règle DEFCLASS, on crée une classe de taille =0 si elle na' pas de mère
+   et de la taille de sa mère si elle en a une.
+   - A chaque fois qu'on ajoute un attribut on augmente la taille de la classe en ajoutant la taille d'un attribut.
+   - Donc un attribut a une taille ou plutot son type a une taille.
