@@ -59,6 +59,7 @@ Les changements effectués:
 Trucs à faire pour la génération du code:
    - ecrire genNull dans tam.java
    - Donner la taille de la classe dans DEFCLASS, taille de la classe= taille des attributs
+   - ajouter une etiquette au constrtucteur par défaut.
    
    
 Questions:
