@@ -21,7 +21,7 @@ inh tds :TDS for
                  F,FX, ARGS, ARGSX;
  --table des attributs          
 --inh tda : TDS for DEFS, DEF ;
- --table des mÃ©thodes
+ --table des methodes
 --inh tdm : TDS for DEFS, DEF, MCORPS, BLOC, INSTS, INST, SIX, E, ER, ES, F, 
   --                 AFFX, ERX, ESX, TX, ARGSX,ARGS;
  --table des constructeurs
@@ -56,20 +56,28 @@ inh infoMethod : INFOMETHOD for INSTS,INST,BLOC,
 inh nom :String for FX;
 inh htype: DTYPE for FX;
 
+
 --code
-syn code : STRING for  DEFCLASSE, CORPS,DEFS, BLOC,INSTS, INST, DEF,E,TERME, FACTEUR, FX, TERMES;
---inh hcode : STRING for INSTS, INST;
--- adresses
-syn dep : INTEGER for  DEFS, DEF, BLOC, INST, INSTS, SIX ,DEFCLASSE;
-inh hdep: INTEGER for DEFS, DEF, CORPS,CLASSES, DEFCLASSE, BLOC, INST, INSTS, SIX;
-
-
-syn est_adresse : BOOLEAN for TERME, F,TX,ARGS,ARGSX, FACTEUR, FX ;
-inh hest_adresse : BOOLEAN for FX;
-
+syn code : STRING for  CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
+                 BLOC, INSTS,INST,
+                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
+                 F,FX, ARGS, ARGSX, OPADD,OPMUL,OPREL,OPUN;
+inh hcode : STRING for FX;-- CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
+                -- BLOC,SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST,
+                -- SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
+                 --F,FX, ARGS, ARGSX;
 
 --TAM
 --inh tam : TAM for BLOC, INSTS,  INST, TERME, FACTEUR, FX, TERMES;
+inh machine : AbstractMachine for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DEF,BLOC,
+                 SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST,
+                 SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
+                 F,FX, ARGS, ARGSX, OPADD,OPMUL,OPREL,OPUN;
+
+-- adresses
+syn dep : INTEGER for BLOC, INST, INSTS;-- DEF;--, DEFS, ,DEFCLASSE,E;
+inh hdep : INTEGER for BLOC,INST,INSTS,PARF, PARFS,PARFSX, DEFS, DEF, SIX ;
+--inh hdep: INTEGER for DEFS, DEF, CORPS,CLASSES, DEFCLASSE, BLOC, INST, INSTS, SIX;
 
 -- les terminaux 
 space separateur is  "[\r\n\t ]+";     
@@ -116,22 +124,18 @@ term entier is  "[0-9]+";
 term ident is  "[_A-Za-z][_0-9A-Za-z]*";
 
 ---------- REGLES DE PRODUCTION ----------------------------------------
-PROGRAMME -> #init #tds #dep CLASSES #gen;
+PROGRAMME -> #init #tds CLASSES #gen;
 global
-  -- machine : AbstractMachine;
+   machine : AbstractMachine;
    t: TDS;
-   
-#dep{
-do 
-CLASSES^hdep := 0;
-end
-}
-
 
 #init {
 local
 do
- --  machine := PROGRAMME^source.getMachine();
+   machine := PROGRAMME^source.getMachine();
+--   CLASSES^hdep:=0;
+--   CLASSES^hcode:="";   
+
 end
 }
 
@@ -139,22 +143,41 @@ end
 do
 -- creer la table pour les classes du programme
  t:= new TDS();
--- transmettre la table Ã  CLASSES
+-- transmettre la table a  CLASSES
 CLASSES^tdsProg:=t;
 end
 }
 #gen {
 local
+  cp : STRING ; -- code de la procedure
 do
---  call machine.writeCode(PROGRAMME^source.getFileName(), "; GC"); 
+ call machine.writeCode(PROGRAMME^source.getFileName(), "; GC"); 
+   -- code de la procedure : generer le prologue et l'epilogue 
+   -- etiquette + taille des parametres + taille retour + code des instructions
+ --  cp := tam.genFonction( ,0 , 0, BLOC^code);              --MOUNA
+   -- generer le code complet
+      -- ajouter un appel a la fonction en debut de programme
+  -- call tam.genAsm(ident^txt, cp);
+ 
 end
 }
 
-CLASSES ->;
-CLASSES -> DEFCLASSE #gen CLASSES;
+CLASSES -> #gen;
 #gen{
 do
-CLASSES1^hdep := DEFCLASSE^dep ;
+CLASSES^code:="";--CLASSES^hcode;
+
+end
+}
+CLASSES -> DEFCLASSE #dep  CLASSES #gen ;
+#dep{
+do
+--CLASSES1^hdep := DEFCLASSE^dep ;
+end
+}
+#gen{
+do
+CLASSES^code := DEFCLASSE^code + CLASSES1^code ;
 end
 }
 -- definition d'une classe
@@ -187,17 +210,16 @@ do
     end
 end
 }
-
 #gen {   --generation de code !
 do
-DEFCLASSE^dep := DEFCLASSE^hdep + 1;
+--DEFCLASSE^dep := DEFCLASSE^hdep + 1;
 DEFCLASSE^code := CORPS^code;
 end
 }
 
 #gen1{
 do
-CORPS^hdep := DEFCLASSE^hdep;
+--CORPS^hdep := DEFCLASSE^hdep;
 end 
 }
 
@@ -230,54 +252,51 @@ do
     end
 end
 }
-
-CORPS -> aco #gen1 DEFS #gen2 acf ;
-
-#gen1{
-do 
-DEFS^hdep := CORPS^hdep; 
+CORPS -> aco #hdep DEFS acf #gen;
+#hdep{
+do
+DEFS^hdep:=3;
 end
 }
-#gen2{ -- a revoir ensuite !
+#gen{
 do
-CORPS^code := DEFS^code;
-end 
+CORPS^code:=DEFS^code;
+end
 }
-
 
 -- les attributs
 DEFS -> #gen;
 #gen{
 do
-DEFS^code := "";
-DEFS^dep := 0;
+DEFS^code:="";
 end
 }
 
-DEFS ->  DEF #gen DEFS #gen1 ;
+DEFS ->  DEF #dep DEFS #gen;
+#dep{
+do
+--    DEFS1^hdep := DEFS^hdep + DEF^dep ;
+end
+}
 #gen{
 do
-DEFS1^hdep := DEF^dep;
+DEFS^code:= DEF^code + DEFS1^code;
 end
 }
 
-#gen1{
-do
-DEFS^code := DEF^code + DEFS1^code;
-end 
-}
 
 -- attribut
 DEF ->  TYPE ident pv #tds;
 #tds {
 local 
-i: INFO;  
+i : INFO;  
 ia: INFOATTRIBUTE;
 t:TDS;
 do
+DEF^code:="";                           -- pas de code pour les attributs
 t:=DEF^infoclass.getAttributes();
 i := t.chercherLocalement(ident^txt);   -- possiblite de redefinition dun attribut dans la classe
-                                        -- fille                                         
+                                        -- fille                                          
     if i /= nil then
        error(attribut_existe_deja, ident^txt);
     else    
@@ -292,7 +311,7 @@ end
 }
 
 -- methode (fonction) 
-DEF ->  TYPE ident paro PARFS parf #tds  BLOC ;
+DEF ->  TYPE ident paro PARFS parf #tds  BLOC #gen  ;
 #tds {
 local 
 i : INFO;
@@ -300,6 +319,7 @@ im: INFOMETHOD;
 t:TDM;
 s: String;
 do
+ BLOC^hdep:=3;
  t:=DEF^infoclass.getMethods();
  i := t.chercherLocalement(ident^txt,PARFS^signature);
  if i /= nil then
@@ -321,9 +341,18 @@ do
     end
 end
 }
-
+#gen{
+local
+ic:INFOCLASS;
+tailleParam:Integer;
+do
+ ic:= DEF^infoclass;
+ tailleParam:=PARFS^signature.getTaille();
+ DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,tailleParam, TYPE^type.getTaille() , BLOC^code);   
+ end
+ }
 -- methode (procedure)
-DEF ->  void ident paro PARFS  parf  #tds BLOC ;
+DEF ->  void ident paro PARFS  parf  #tds BLOC #gen ;
 
 #tds {
 local 
@@ -332,6 +361,7 @@ im:INFOMETHOD;
 t:TDM;
 s:String;
 do
+ BLOC^hdep:=3;
  t:=DEF^infoclass.getMethods();
  i := t.chercherLocalement(ident^txt,PARFS^signature);
  if i /= nil then
@@ -352,19 +382,32 @@ do
 end
 }
 
+#gen{
+local
+ic:INFOCLASS;
+tailleParam:Integer;
+do
+ ic:= DEF^infoclass;
+ tailleParam:=PARFS^signature.getTaille();
+ DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,tailleParam, 0 , BLOC^code);   
+ end
+ }
+
 -- constructeur
-DEF -> ident  paro PARFS parf #tds BLOC ;
+DEF -> ident  paro PARFS parf #tds BLOC #gen;
+global
+im:INFOMETHOD;
 #tds{
 local
 i:INFO;
-im:INFOMETHOD;
 nomClass:String;
 t:TDM;
 a:String;
 ti:DTYPE;
 s:String;
 do 
-nomClass:=DEF^infoclass.getName();
+ BLOC^hdep:=3;
+ nomClass:=DEF^infoclass.getName();
  if (ident^txt.equals( nomClass)) then
   t:= DEF^infoclass.getConstructors();
 
@@ -392,6 +435,18 @@ nomClass:=DEF^infoclass.getName();
       error(construc_name, ident^txt);  
  end
 end
+ }
+#gen{
+local
+ic:INFOCLASS;
+tailleParam:Integer;
+t:DTYPE;
+do
+t:=im.getType();
+ ic:= DEF^infoclass;
+ tailleParam:=PARFS^signature.getTaille();
+ DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,tailleParam, t.getTaille() , BLOC^code);   
+ end
  }
 -- les types
 
@@ -493,16 +548,20 @@ BLOC -> aco #tds INSTS acf #gen;
 
 #tds{
 do
---t:= BLOC^tds;
-INSTS^tds:= new TDS();                              --TAM
+INSTS^tds:= new TDS();  
 
+                            --TAM
 end
 }
 #gen {
+local
+t:TDS;
 do
+--   t:=INSTS^tds;
 --   write "; tds:\n" + t;
 --   write "; taille des locales = " + (INSTS^adr - BLOC^hadr)+ "\n";         --copiee du BLOC
---   BLOC^code := INSTS^code + BLOC^tam.genFree(INSTS^adr - BLOC^hadr);
+    BLOC^dep:=INSTS^dep;
+   BLOC^code := INSTS^code + BLOC^machine.genFree(INSTS^dep - BLOC^hdep);
 end
 }
 
@@ -516,8 +575,8 @@ if (INSTS^infoMethod.isFunction()) then
     error(func_retour);
     end
 end
---  INSTS^adr := INSTS^hadr;
---  INSTS^code := "";
+    INSTS^dep := INSTS^hdep;
+    INSTS^code := "";
 end
 }
 
@@ -525,28 +584,28 @@ INSTS -> INST #adr INSTS #gen;
 
 #adr {
 do
-  --write "@ courante = " + INST^adr + "\n";
---  INSTS1^hadr := INST^adr;
+    write "@ courante = " + INST^dep + "\n";
+    INSTS1^hdep := INST^dep;
 end
 }
 
 
 #gen {
 do
---  INSTS^adr := INSTS1^adr;
---  INSTS^code := INST^code + INSTS1^code;
+   INSTS^dep := INSTS1^dep;
+ INSTS^code := INST^code + INSTS1^code;
 end
 }
 
 
 
 -- declaration de variable locale sans init
-INST-> TYPE ident pv #gen ;
+INST-> TYPE ident pv #type #gen ;
 global 
     i : INFO ;
     iv : INFOVAR ;
 
-#gen{ 
+#type{ 
 local
     t: TDS;
     t2:TDS;
@@ -570,26 +629,27 @@ do
         
         --ajouter la variable a la tds des variables de infoMethod
         t2:=INST^infoMethod.getListVar();
-        call t2.inserer(ident^txt,  iv);
-        
-        
-  --      INST^adr := INST^hadr + TYPE^type.getTaille();                    -- a verifier
-  --      INST^code := INST^tam.genDecl(ident^txt, iv, E^code);         --TAM
+        call t2.inserer(ident^txt,  iv);        
         end
      end
 end
 
 }  
 
-
+#gen{
+do
+     INST^dep := INST^hdep + TYPE^type.getTaille();
+     INST^code := INST^machine.genDecl(ident^txt, iv);
+ end 
+     }
 
 --declaration avec affectation
-INST-> TYPE ident affect E pv #gen;
+INST-> TYPE ident affect E pv #type #gen;
 global 
     i : INFO ;
     iv : INFOVAR ;
 
-#gen {
+#type {
 local
     t: TDS;
     t2:TDS;
@@ -604,7 +664,7 @@ do
         i := INST^tds.chercherLocalement(ident^txt);
         if i /= nil then
             error(var_existe_deja, ident^txt);
-        elseif ~TYPE^type.compareTo(E^type) then
+        elseif ~E^type.compareTo(TYPE^type) then
             error(type_incompatible, TYPE^type, E^type);
         else
             -- creer une variable
@@ -614,26 +674,42 @@ do
         --ajouter la variable a la tds des variables de infoMethod
         t2:=INST^infoMethod.getListVar();
         call t2.inserer(ident^txt,  iv);
-                 
- --       INST^adr := INST^hadr + TYPE^type.getTaille();               --TAM
- --       INST^code := INST^tam.genDecl(ident^txt, iv, E^code);        --TAM
+                
         end
      end
 end
 }
 
+#gen{
+do
+     INST^dep := INST^hdep + TYPE^type.getTaille();
+     INST^code := INST^machine.genDecl(ident^txt, iv,E^code);
+ end 
+     }
 
 -- instruction expression
-INST -> E pv ;                                  --generation du code ,TAM
+INST -> E pv #gen;
+#gen{
+do
+INST^dep:=0;    ------------------------------------------------------------------------------------------------------ a voir
+INST^code:=E^code;
+end
+}                                  --generation du code ,TAM
 -- bloc d'instructions
-INST -> BLOC ;                                  --generation du code ,TAM
+INST -> BLOC #gen ;                                  --generation du code ,TAM
+#gen{
+do
+INST^dep:=BLOC^dep;
+INST^code:=BLOC^code;
+end
+} 
 
 -- conditionnelle
 INST -> si paro E parf #type  BLOC SIX #gen ;
 #gen {
 do
---    INST^adr := INST^hadr;
---    INST^code := INST^tam.genIf(E^code, BLOC^code, SIX^code) ;  --TAM 
+    INST^dep:= INST^hdep;
+    INST^code := INST^machine.genIf(E^code, BLOC^code, SIX^code) ;  
 end
 }
 
@@ -647,20 +723,18 @@ end
 SIX -> sinon BLOC #gen ;
 #gen{
 do
---SIX^code := BLOC^code;
-                          --TAM
- 
+SIX^code := BLOC^code;
 end
 }
 
 SIX ->  #gen;
 #gen{
 do
---SIX^code := "";                          --TAM
+ SIX^code := "";                       
 end
 }
 -- return
-INST -> retour E pv #type ;
+INST -> retour E pv #type #gen ;
 #type{
 local
 i:INFOMETHOD;
@@ -678,7 +752,12 @@ else
 end
 end 
 }
-
+#gen{
+do
+INST^code:= INST^machine.genRet(E^type.getTaille(),"LB");
+INST^dep:=0;                                                                                            --------------------------------------------A voir
+end
+}
 
 
 -- les expressions
@@ -691,11 +770,10 @@ do
     if  t/= nil then
      if ~(t.compareTo(ER^type)) then
         error(type_incompatible, AFFX^type, ER^type);
-     end
     end
     E^type := ER^type;
-    
-                                                         --generation de code 
+    end
+ E^code:= AFFX^code + E^machine.genAff(AFFX^type.getTaille(), ER^dep, ER^reg);                                                        --generation de code 
 end
 }
 
@@ -704,13 +782,14 @@ AFFX ->  affect ER #type ;
 #type{
 do
 AFFX^type:=ER^type;
+AFFX^code:=ER^code;
 end}
 AFFX -> #type ;
 
 #type{
 do
 AFFX^type:=nil;                       
-                                                         --generation de code 
+AFFX^code:="";                                                        --generation de code 
 end}
 
 
@@ -720,6 +799,7 @@ ER ->   ES ERX #type;
 local
     t : DTYPE ;
 do
+    ER^code:=ES^code+ ERX^code;
     t := ERX^type ;
     if  t/= nil then
      if ~(t.compareTo(ES^type)) then
@@ -738,6 +818,7 @@ ES ->  TERME ESX #type;
 local
     t : DTYPE ;
 do
+    ES^code:= TERME^code + ESX^code;
     t := ESX^type ;
     if  t/= nil then
      if ~(t.compareTo(TERME^type)) then
@@ -754,6 +835,7 @@ ERX ->  OPREL ES #type;
 local
     t : DTYPE ;
 do
+    ERX^code:=ES^code+OPREL^code;
     t := ES^type ;
     if ~(OPREL^type=nil) then           --le type de OPREL= nil dans le cas de = et /= marche 
                                         -- pour tout les types
@@ -770,42 +852,49 @@ end
 ERX -> #type ;
 #type{
 do
+ERX^code:="";
 ERX^type:=nil;
 end}
 
 OPREL -> inf #type ;
 #type{
 do
+OPREL^code:=OPREL^machine.genInf();
 OPREL^type:=new IntDTYPE();
 end
 }
 OPREL -> infeg #type ;
 #type{
 do
+OPREL^code:=OPREL^machine.genInfeg();
 OPREL^type:=new IntDTYPE();
 end
 }
 OPREL -> sup #type ;
 #type{
 do
+OPREL^code:=OPREL^machine.genSup();
 OPREL^type:=new IntDTYPE();
 end
 }
 OPREL -> supeg #type;
 #type{
 do
+OPREL^code:=OPREL^machine.genSupeg();
 OPREL^type:=new IntDTYPE();
 end
 }
 OPREL -> eg  #type;
 #type{
 do
+OPREL^code:=OPREL^machine.genEg();
 OPREL^type:=nil;
 end
 }
 OPREL -> neg #type;
 #type{
 do
+OPREL^code:=OPREL^machine.genNeg();
 OPREL^type:=nil;
 end
 }
@@ -816,13 +905,14 @@ local
     t1 : DTYPE ;
     t2 : DTYPE ;
 do
+    ESX^code:=TERME^code + ESX1^code + OPADD^code;
     t1 := TERME^type ;
     t2 := ESX1^type ; 
     if ~(t1.compareTo(OPADD^type)) then
         error(type_incompatible, OPADD^type, t1);
     else
         if (t2/=nil) then  
-            if ~(t1.compareTo(t2))then 
+            if ~(t2.compareTo(t1))then 
                 error(type_incompatible, t1, t2);  
             end
         end
@@ -835,21 +925,25 @@ end
 ESX -> #type;
 #type{
 do
+ESX^code:="";
 ESX^type:=nil;
 end}
 OPADD -> plus #type;
 #type{
 do
 OPADD^type:=new IntDTYPE();
+OPADD^code:=OPADD^machine.genAddition();
 end}
 OPADD -> moins #type;
 #type{
 do
+OPADD^code:=OPADD^machine.genSoustraction();
 OPADD^type:=new IntDTYPE();
 end}
 OPADD -> ou #type ;
 #type{
 do
+OPADD^code:=OPADD^machine.genOu();
 OPADD^type:=new BoolDTYPE();
 end}
 
@@ -858,6 +952,7 @@ TERME ->  FACTEUR TX #type;
 local
     t : DTYPE ;
 do
+    TERME^code:=FACTEUR^code + TX^code;
     t := TX^type ;
     if  t/= nil then
      if ~(t.compareTo(FACTEUR^type)) then
@@ -876,13 +971,14 @@ local
     t1 : DTYPE ;
     t2 : DTYPE ;
 do
+    TX^code:= FACTEUR^code + TX1^code + OPMUL^code;
     t1 := FACTEUR^type ;
     t2 := TX1^type ;
     if ~(t1.compareTo(OPMUL^type)) then
         error(type_incompatible, OPMUL^type, t1);
     else
         if (t2/=nil) then  
-            if ~(t1.compareTo(t2))then 
+            if ~(t2.compareTo(t1))then 
                 error(type_incompatible, t1, t2);  
             end
         end
@@ -894,30 +990,35 @@ end
 TX -> #type;
 #type{
 do
+TX^code:="";
 TX^type:=nil;
 end
 }
 OPMUL -> mult #type ;
 #type{
 do
+OPMUL^code:=OPMUL^machine.genMult();
 OPMUL^type:=new IntDTYPE();
 end
 }
 OPMUL -> div #type ;
 #type{
 do
+OPMUL^code:=OPMUL^machine.genDiv();
 OPMUL^type:=new IntDTYPE();
 end
 }
 OPMUL -> mod #type;
 #type{
 do
+OPMUL^code:=OPMUL^machine.genMod();
 OPMUL^type:=new IntDTYPE();
 end
 }
 OPMUL -> et #type ;
 #type{
 do
+OPMUL^code:=OPMUL^machine.genEt();
 OPMUL^type:=new BoolDTYPE();
 end
 }
@@ -927,6 +1028,7 @@ FACTEUR ->  OPUN FACTEUR #type;
 local
     t : DTYPE ;
 do
+    FACTEUR^code:= FACTEUR1^code + OPUN^code;
     t := FACTEUR1^type ;
      if ~(t.compareTo(OPUN^type)) then
         error(type_incompatible, OPUN^type, t);
@@ -939,18 +1041,21 @@ end
 OPUN -> plus #type;
 #type{
 do
+OPUN^code:="";-- Le plus unaire ne fais rien OPUN^machine.genBplus();
 OPUN^type:=new IntDTYPE();
 end
 }
 OPUN -> moins #type ;
 #type{
 do
+OPUN^code:=OPUN^machine.genOpp();
 OPUN^type:=new IntDTYPE();
 end
 }
 OPUN -> non #type;
 #type{
 do
+OPUN^code:=OPUN^machine.genNon();
 OPUN^type:=new BoolDTYPE();
 end
 }
@@ -960,7 +1065,7 @@ FACTEUR -> entier #gen;
 do                                                         
     FACTEUR^type := new IntDTYPE();
  --   FACTEUR^est_adresse := false;
- --   FACTEUR^code := FACTEUR^tam.genCst(entier^txt);
+    FACTEUR^code := FACTEUR^machine.genCst(entier^txt);
 end
 }
 -- booleens
@@ -969,7 +1074,7 @@ FACTEUR -> vrai #gen;
 do
   FACTEUR^type := new BoolDTYPE();
 --  FACTEUR^est_adresse := false;
---  FACTEUR^code := FACTEUR^tam.genCst("1");
+   FACTEUR^code := FACTEUR^machine.genCst("1");
  end
 }
 FACTEUR -> faux #gen;
@@ -977,7 +1082,7 @@ FACTEUR -> faux #gen;
 do
   FACTEUR^type := new BoolDTYPE();
 --  FACTEUR^est_adresse := false;
---  FACTEUR^code := FACTEUR^tam.genCst("0");
+  FACTEUR^code := FACTEUR^machine.genCst("0");
 end
 }
 
@@ -987,39 +1092,38 @@ FACTEUR -> null #gen;
 do
   FACTEUR^type := new DTYPE("null", 0);
 --  FACTEUR^est_adresse := false;
---  FACTEUR^code := FACTEUR^tam.genCst("null");
+  FACTEUR^code := FACTEUR^machine.genNull();    ---faire genNull!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 end
 }
 
 FACTEUR -> F #type;
 #type{
 do
-FACTEUR^type:= F^type;                          --generation du code
+FACTEUR^type:= F^type;   
+FACTEUR^code:=F^code;                       --generation du code
 end
 }
 
--- expression parenthÃ©sÃ©e
+-- expression parenthesee
 F -> paro E parf #type ;
 #type{
 do
-F^type:=E^type;                           --generation du code            
+F^type:=E^type;   
+F^code:=E^code;                        --generation du code            
 end
 }
 
 -- new
-F -> nouveau TYPE paro ARGS parf #htype FX #type;
-#type{
-do
-F^type:=FX^type;
-end}
+F -> nouveau TYPE paro ARGS parf #htype FX #gen #type;
+global
+it:INFOCLASS;
 #htype{
 local
 i: INFO;
 i1:INFO;
-it:INFOCLASS;
 t:TDM;
 do
-FX^nom:="";
+   FX^nom:="";
 i:= F^tdsProg.chercherGlobalement(TYPE^type.getNom());
 match i 
  with INFOCLASS then
@@ -1037,14 +1141,22 @@ match i
      error(class_non_existe,TYPE^type);
 end
 end}
-
+#gen{
+do
+   F^code := F^machine.genMalloc(it.getTaille()) + FX^code ;  --TYPE^type
+end}
+#type{
+do
+F^type:=FX^type;
+end}
 
 -- objet courant
-F -> this #htype FX  #type;
+F -> this #htype FX  #type #gen;
 #htype{
 do
 FX^nom:="";
 FX^htype:=F^infoclass.getType();
+FX^hcode:=F^machine.genThis(F^infoclass);
 end}
 #type{
 do
@@ -1052,6 +1164,11 @@ F^type:=FX^type;
 end
 }
 
+#gen{
+do
+F^code:=FX^code;
+end
+}
 -- objet parent
 F -> super #htype FX #type;
 #htype{
@@ -1073,10 +1190,11 @@ end
 }
 
 -- acces variable, parametre, ou attribut de this
-F -> ident #htype FX #type;
+F -> ident #htype FX #type #gen;
+global
+i:INFO;
 #htype{
 local
-i:INFO;
 t: TDS;
 t1:TDS;
 do
@@ -1116,13 +1234,22 @@ do
 F^type:=FX^type;
 end
 }
-
+#gen{
+do  
+    if 
+    
+    
+    match i 
+    with INFOVAR
+    F^code :=F^machine.genAdr(i.getDep(), i.getReg());
+end}
 
 FX -> #type;
 #type{
 local
  
 do
+FX^code:=FX^hcode;
 if (FX^htype=nil) then 
     error(pas_trouve,FX^nom);
 else
