@@ -54,3 +54,8 @@ Les changements effectués:
    - Une fonction doit avoir une instruction retour
    - j'ai ajouté à chaque classe un constructeur par défaut.
    - null est compatible avec tout les types.
+
+
+Trucs à faire pour la génération du code:
+   - ecrire genNull dans tam.java
+   - Donner la taille de la classe dans DEFCLASS, taille de la classe= taille des attributs
