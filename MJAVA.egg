@@ -62,7 +62,9 @@ syn code : STRING for  CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
                  BLOC, INSTS,INST,
                  SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
                  F,FX, ARGS, ARGSX, OPADD,OPMUL,OPREL,OPUN;
-inh hcode : STRING for FX;-- CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
+   --main est le code a afficher
+syn main : STRING for  CLASSES, DEFCLASSE, CORPS, DEFS, DEF;
+--inh hcode : STRING for FX;-- CLASSES, DEFCLASSE, CORPS, DEFS, DEF,
                 -- BLOC,SUPER, TYPE, PARFS,PARFSX, PARF, INSTS,INST,
                 -- SIX, E, AFFX, ER,ES, ERX, ESX, TERME, FACTEUR, TX,
                  --F,FX, ARGS, ARGSX;
@@ -75,9 +77,13 @@ inh machine : AbstractMachine for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DE
                  F,FX, ARGS, ARGSX, OPADD,OPMUL,OPREL,OPUN;
 
 -- adresses
-syn dep : INTEGER for BLOC, INST, INSTS;-- DEF;--, DEFS, ,DEFCLASSE,E;
+syn dep : INTEGER for BLOC, INST, INSTS, DEF;--, DEFS, ,DEFCLASSE,E;
 inh hdep : INTEGER for BLOC,INST,INSTS,PARF, PARFS,PARFSX, DEFS, DEF, SIX ;
 --inh hdep: INTEGER for DEFS, DEF, CORPS,CLASSES, DEFCLASSE, BLOC, INST, INSTS, SIX;
+inh est_gauche: BOOLEAN for ER,ERX, TERME, ES, ESX, FACTEUR, TX, F, FX;
+
+--dit si une expression est une adresse cad pointe sur une zone memoire
+syn est_adresse: BOOLEAN for ER, ERX, ES,ESX, TERME, TX, FACTEUR, F, E ,AFFX;
 
 -- les terminaux 
 space separateur is  "[\r\n\t ]+";     
@@ -133,9 +139,6 @@ global
 local
 do
    machine := PROGRAMME^source.getMachine();
---   CLASSES^hdep:=0;
---   CLASSES^hcode:="";   
-
 end
 }
 
@@ -151,13 +154,14 @@ end
 local
   cp : STRING ; -- code de la procedure
 do
+ cp:=CLASSES^main+ CLASSES^code;
  call machine.writeCode(PROGRAMME^source.getFileName(), "; GC"); 
    -- code de la procedure : generer le prologue et l'epilogue 
    -- etiquette + taille des parametres + taille retour + code des instructions
  --  cp := tam.genFonction( ,0 , 0, BLOC^code);              --MOUNA
    -- generer le code complet
-      -- ajouter un appel a la fonction en debut de programme
-  -- call tam.genAsm(ident^txt, cp);
+      -- ajouter un appel a la methode main en debut de programme
+  call machine.genAsm( cp, "programme");
  
 end
 }
@@ -165,7 +169,8 @@ end
 CLASSES -> #gen;
 #gen{
 do
-CLASSES^code:="";--CLASSES^hcode;
+CLASSES^main:="";
+CLASSES^code:="";
 
 end
 }
@@ -177,16 +182,16 @@ end
 }
 #gen{
 do
+CLASSES^main := DEFCLASSE^main + CLASSES1^main ;
 CLASSES^code := DEFCLASSE^code + CLASSES1^code ;
 end
 }
 -- definition d'une classe
 DEFCLASSE -> classe ident SUPER #tds #gen1 CORPS #gen;
 global
---  t: TDS;
+    ic : INFOCLASS ;
 #tds{
 local
-    ic : INFOCLASS ;
     i:INFO;
 do
    
@@ -195,6 +200,7 @@ do
 --   CORPS^classname:=ident^txt;   
     i := DEFCLASSE^tdsProg.chercherGlobalement(ident^txt);
     if i /= nil then
+        ic:=i;
        error(class_existe_deja, ident^txt);
     else    
       -- creer une classe
@@ -213,7 +219,8 @@ end
 #gen {   --generation de code !
 do
 --DEFCLASSE^dep := DEFCLASSE^hdep + 1;
-DEFCLASSE^code := CORPS^code;
+DEFCLASSE^code := DEFCLASSE^machine.genConsDef(ident^txt,ic.getTaille())+ CORPS^code;
+DEFCLASSE^main := CORPS^main;
 end
 }
 
@@ -260,6 +267,7 @@ end
 }
 #gen{
 do
+CORPS^main:=DEFS^main;
 CORPS^code:=DEFS^code;
 end
 }
@@ -268,6 +276,7 @@ end
 DEFS -> #gen;
 #gen{
 do
+DEFS^main:="";
 DEFS^code:="";
 end
 }
@@ -280,6 +289,7 @@ end
 }
 #gen{
 do
+DEFS^main:= DEF^main + DEFS1^main;
 DEFS^code:= DEF^code + DEFS1^code;
 end
 }
@@ -293,7 +303,7 @@ i : INFO;
 ia: INFOATTRIBUTE;
 t:TDS;
 do
-DEF^code:="";                           -- pas de code pour les attributs
+                           -- pas de code pour les attributs
 t:=DEF^infoclass.getAttributes();
 i := t.chercherLocalement(ident^txt);   -- possiblite de redefinition dun attribut dans la classe
                                         -- fille                                          
@@ -301,12 +311,14 @@ i := t.chercherLocalement(ident^txt);   -- possiblite de redefinition dun attrib
        error(attribut_existe_deja, ident^txt);
     else    
       -- creer un attribut
-     ia := new INFOATTRIBUTE(ident^txt,TYPE^type);--,dep,reg);           --   modifier pour TAM
- --    call DEF^tds.inserer(ident^txt,  ia);
-     --mise Ã  jour de la tds des attributs
-     call DEF^infoclass.addAttribute(ident^txt,ia);
+     ia := new INFOATTRIBUTE(ident^txt,TYPE^type,DEF^hdep,"HB");
+       DEF^dep := DEF^hdep + TYPE^type.getTaille();
+       DEF^code:=DEF^machine.genDecl(ident^txt, ia);          
 
-    end
+     --mise a jour de la tds des attributs
+     call DEF^infoclass.addAttribute(ident^txt,ia);
+     DEF^main:="";
+     end
 end
 }
 
@@ -346,9 +358,11 @@ local
 ic:INFOCLASS;
 tailleParam:Integer;
 do
+DEF^dep:=0; --pas de deplacement pour une methode
  ic:= DEF^infoclass;
  tailleParam:=PARFS^signature.getTaille();
- DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,tailleParam, TYPE^type.getTaille() , BLOC^code);   
+ DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam, TYPE^type.getTaille() , BLOC^code);   
+ DEF^main:="";
  end
  }
 -- methode (procedure)
@@ -387,9 +401,15 @@ local
 ic:INFOCLASS;
 tailleParam:Integer;
 do
+DEF^dep:=0; --pas de deplacement pour une methode
  ic:= DEF^infoclass;
  tailleParam:=PARFS^signature.getTaille();
- DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,tailleParam, 0 , BLOC^code);   
+ DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam, 0 , BLOC^code);   
+ if ident^txt.equals("main") then
+    DEF^main:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam, 0 , BLOC^code); 
+ else
+    DEF^main:="";
+  end
  end
  }
 
@@ -442,10 +462,12 @@ ic:INFOCLASS;
 tailleParam:Integer;
 t:DTYPE;
 do
+DEF^dep:=0; --pas de deplacement pour une methode
 t:=im.getType();
  ic:= DEF^infoclass;
  tailleParam:=PARFS^signature.getTaille();
- DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,tailleParam, t.getTaille() , BLOC^code);   
+ DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam, t.getTaille() , BLOC^code);   
+  DEF^main:="";
  end
  }
 -- les types
@@ -622,7 +644,8 @@ do
           error(var_existe_deja, ident^txt);
         else
         -- creer une variable
-        iv := new INFOVAR(TYPE^type);--, INST^hadr, "LB");                      -- a verifier
+        iv := new INFOVAR(TYPE^type, INST^hdep, "LB");    
+             INST^dep := INST^hdep + TYPE^type.getTaille();                  
 
         --ajouter dans la tds du bloc
         call INST^tds.inserer(ident^txt,  iv);
@@ -638,7 +661,6 @@ end
 
 #gen{
 do
-     INST^dep := INST^hdep + TYPE^type.getTaille();
      INST^code := INST^machine.genDecl(ident^txt, iv);
  end 
      }
@@ -668,7 +690,9 @@ do
             error(type_incompatible, TYPE^type, E^type);
         else
             -- creer une variable
-        iv := new INFOVAR(TYPE^type);--, INST^hadr, "LB");         --TAM
+        iv := new INFOVAR(TYPE^type, INST^hdep, "LB");  
+        INST^dep := INST^hdep + TYPE^type.getTaille();       
+        
         call INST^tds.inserer(ident^txt,  iv); 
         
         --ajouter la variable a la tds des variables de infoMethod
@@ -682,7 +706,6 @@ end
 
 #gen{
 do
-     INST^dep := INST^hdep + TYPE^type.getTaille();
      INST^code := INST^machine.genDecl(ident^txt, iv,E^code);
  end 
      }
@@ -761,7 +784,20 @@ end
 
 
 -- les expressions
-E ->  ER AFFX #type;
+E -> #gen ER AFFX #type #est_adresse;
+#est_adresse{
+do
+if AFFX^est_adresse then          
+   E^est_adresse:=ER^est_adresse;
+else  -- cad il y a une affectaion donc E ne peut etre une adresse 
+   E^est_adresse:=false;
+end  
+end}
+#gen{
+do
+ER^est_gauche:=true;
+end}
+
 #type{
 local
     t : DTYPE ;
@@ -773,14 +809,25 @@ do
     end
     E^type := ER^type;
     end
- E^code:= AFFX^code + E^machine.genAff(AFFX^type.getTaille(), ER^dep, ER^reg);                                                        --generation de code 
+ if ER^est_adresse then         --ER est une adresse (cad pointeur) dans on ecrit a cette adresse 
+    E^code:= AFFX^code + ER^code+ E^machine.genWriteMem(AFFX^type.getTaille()); 
+ else                           -- ER est une variable locale 
+    E^code:= AFFX^code + ER^code;
+ end                                                     
+
+
 end
 }
 
 -- affectation
-AFFX ->  affect ER #type ;
+AFFX ->  #gen affect ER #type ;
+#gen{
+do
+ER^est_gauche:=false;
+end}
 #type{
 do
+AFFX^est_adresse:=false;
 AFFX^type:=ER^type;
 AFFX^code:=ER^code;
 end}
@@ -788,13 +835,22 @@ AFFX -> #type ;
 
 #type{
 do
+AFFX^est_adresse:=true;
 AFFX^type:=nil;                       
 AFFX^code:="";                                                        --generation de code 
 end}
 
 
 -- relation
-ER ->   ES ERX #type;
+ER ->   ES ERX #type #est_adresse;
+#est_adresse{
+do
+if ERX^est_adresse then         -- cad il n'y a une operation de relation donc 
+   ER^est_adresse:=ES^est_adresse;
+else  -- cad il y a une operation de relation donc ER ne peut etre une adresse ca sera un boolean
+     ER^est_adresse:=false;
+end  
+end}
 #type{
 local
     t : DTYPE ;
@@ -813,7 +869,15 @@ do
                                                          --generation de code 
 end
 }
-ES ->  TERME ESX #type;
+ES ->  TERME ESX #type #est_adresse;
+#est_adresse{
+do
+if ESX^est_adresse then         -- cad il y a une operation arithmetique  
+   ES^est_adresse:=TERME^est_adresse;
+else  -- cad il y a une operation arithmetique donc ER ne peut etre une adresse ca sera un boolean
+     ES^est_adresse:=false;
+end  
+end}
 #type{
 local
     t : DTYPE ;
@@ -825,12 +889,14 @@ do
         error(type_incompatible, ESX^type, TERME^type);
      end
     end
-         ES^type := TERME^type;
-
-                                                         --generation de code 
+   ES^type := TERME^type;
 end
 }
-ERX ->  OPREL ES #type;
+ERX ->  OPREL ES #type #est_adresse;
+#est_adresse{
+do
+    ERX^est_adresse:=false;                                -- cad il y a une operation arithmetique   
+end}
 #type{
 local
     t : DTYPE ;
@@ -854,6 +920,7 @@ ERX -> #type ;
 do
 ERX^code:="";
 ERX^type:=nil;
+ERX^est_adresse:=true;  
 end}
 
 OPREL -> inf #type ;
@@ -905,6 +972,7 @@ local
     t1 : DTYPE ;
     t2 : DTYPE ;
 do
+    ESX^est_adresse:=false;  
     ESX^code:=TERME^code + ESX1^code + OPADD^code;
     t1 := TERME^type ;
     t2 := ESX1^type ; 
@@ -925,6 +993,7 @@ end
 ESX -> #type;
 #type{
 do
+ESX^est_adresse:=true;  
 ESX^code:="";
 ESX^type:=nil;
 end}
@@ -947,7 +1016,16 @@ OPADD^code:=OPADD^machine.genOu();
 OPADD^type:=new BoolDTYPE();
 end}
 
-TERME ->  FACTEUR TX #type;
+TERME ->  FACTEUR TX #type #est_adresse;
+#est_adresse{
+do
+if TX^est_adresse then         -- cad il y a une operation arithmetique  
+   TERME^est_adresse:=FACTEUR^est_adresse;
+else  -- cad il y a une operation arithmetique donc ER ne peut etre une adresse ca sera un boolean
+    TERME^est_adresse:=false;
+end  
+end}
+
 #type{
 local
     t : DTYPE ;
@@ -971,6 +1049,7 @@ local
     t1 : DTYPE ;
     t2 : DTYPE ;
 do
+    TX^est_adresse:=false;
     TX^code:= FACTEUR^code + TX1^code + OPMUL^code;
     t1 := FACTEUR^type ;
     t2 := TX1^type ;
@@ -992,6 +1071,7 @@ TX -> #type;
 do
 TX^code:="";
 TX^type:=nil;
+TX^est_adresse:=true;
 end
 }
 OPMUL -> mult #type ;
@@ -1028,6 +1108,7 @@ FACTEUR ->  OPUN FACTEUR #type;
 local
     t : DTYPE ;
 do
+    FACTEUR^est_adresse:=false;
     FACTEUR^code:= FACTEUR1^code + OPUN^code;
     t := FACTEUR1^type ;
      if ~(t.compareTo(OPUN^type)) then
@@ -1062,9 +1143,9 @@ end
 -- expressions de base
 FACTEUR -> entier #gen;
 #gen {
-do                                                         
+do   
+    FACTEUR^est_adresse:=false;                                                 
     FACTEUR^type := new IntDTYPE();
- --   FACTEUR^est_adresse := false;
     FACTEUR^code := FACTEUR^machine.genCst(entier^txt);
 end
 }
@@ -1073,15 +1154,15 @@ FACTEUR -> vrai #gen;
 #gen {
 do
   FACTEUR^type := new BoolDTYPE();
---  FACTEUR^est_adresse := false;
-   FACTEUR^code := FACTEUR^machine.genCst("1");
+  FACTEUR^est_adresse := false;
+  FACTEUR^code := FACTEUR^machine.genCst("1");
  end
 }
 FACTEUR -> faux #gen;
 #gen {
 do
   FACTEUR^type := new BoolDTYPE();
---  FACTEUR^est_adresse := false;
+  FACTEUR^est_adresse := false;
   FACTEUR^code := FACTEUR^machine.genCst("0");
 end
 }
@@ -1091,7 +1172,7 @@ FACTEUR -> null #gen;
 #gen {
 do
   FACTEUR^type := new DTYPE("null", 0);
---  FACTEUR^est_adresse := false;
+  FACTEUR^est_adresse := false;
   FACTEUR^code := FACTEUR^machine.genNull();    ---faire genNull!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 end
 }
@@ -1099,6 +1180,7 @@ end
 FACTEUR -> F #type;
 #type{
 do
+FACTEUR^est_adresse:=F^est_adresse;
 FACTEUR^type:= F^type;   
 FACTEUR^code:=F^code;                       --generation du code
 end
@@ -1108,6 +1190,7 @@ end
 F -> paro E parf #type ;
 #type{
 do
+F^est_adresse:=E^est_adresse;
 F^type:=E^type;   
 F^code:=E^code;                        --generation du code            
 end
@@ -1143,10 +1226,12 @@ end
 end}
 #gen{
 do
-   F^code := F^machine.genMalloc(it.getTaille()) + FX^code ;  --TYPE^type
+   F^code := F^machine.genMalloc(it.getTaille()) + FX^code ;  --TYPE^type       -- l'adresse du nouveau objet crée est dans la pile suivi du code de FX(store/load)
+--   FX^hest_adresse:=true;                                                       -- on dit a FX qu'il doit faire un laod
 end}
 #type{
 do
+F^est_adresse:=true;
 F^type:=FX^type;
 end}
 
@@ -1156,7 +1241,7 @@ F -> this #htype FX  #type #gen;
 do
 FX^nom:="";
 FX^htype:=F^infoclass.getType();
-FX^hcode:=F^machine.genThis(F^infoclass);
+--FX^hcode:=F^machine.genThis(F^infoclass);
 end}
 #type{
 do
@@ -1166,6 +1251,7 @@ end
 
 #gen{
 do
+F^est_adresse:=true;
 F^code:=FX^code;
 end
 }
@@ -1185,7 +1271,9 @@ do
 end}
 #type{
 do
+F^est_adresse:=false;
 F^type:=FX^type;
+F^code:="";--F^machine.genCall(F^infoclass
 end
 }
 
@@ -1195,6 +1283,7 @@ global
 i:INFO;
 #htype{
 local
+typ:DTYPE;
 t: TDS;
 t1:TDS;
 do
@@ -1204,25 +1293,35 @@ i:=t.chercherGlobalement(ident^txt);
 --i:=F^tdsParamh.chercherGlobalement(ident^txt);
  if (i=nil) then
     --recherche de ident dans tds du bloc cad comme variable locale
-    --on fait recherche globale 
     i:=F^tds.chercherGlobalement(ident^txt);
     if (i=nil)  then
         --recherche dans les attributs de la classe et de sa classe mere
         t1:=F^infoclass.getAttributes();
-        i:=t1.chercherGlobalement(ident^txt);
+        i:=t1.chercherGlobalement(ident^txt);        
         if (i=nil)  then
             -- si il trouve pas , on cherche dans les methodes 
             FX^nom:=ident^txt;
             FX^htype:=F^infoclass.getType(); 
+  --          FX^hest_adresse:=false;
+        
+        --ident est un attribut
         else
+  --          FX^hest_adresse:=true;
             FX^htype:=i.getType();
             FX^nom:="";
         end     
+    
+    
+    -- ident est une variable
     else
     FX^htype:=i.getType();
     FX^nom:="";
+
     end
+
+--ident est un parametre
 else
+--    FX^hest_adresse:=false;
     FX^htype:=i.getType();
     FX^nom:="";
  end
@@ -1235,13 +1334,35 @@ F^type:=FX^type;
 end
 }
 #gen{
+local
+iv:INFOVAR;
+ia:INFOATTRIBUTE;
+t:DTYPE;
 do  
-    if 
-    
-    
-    match i 
-    with INFOVAR
-    F^code :=F^machine.genAdr(i.getDep(), i.getReg());
+
+t:=i.getType();
+  match i 
+  with INFOVAR then             --parametre ou variable
+  iv:=i;
+                 if t.compareTo(new IntDTYPE())| t.compareTo(new BoolDTYPE()) then
+	    F^est_adresse:=false;
+	    if (F^est_gauche) then
+	       F^code:=F^machine.genAdr(iv.getDep(), iv.getReg());--empiler l'adresse de la variable
+	    else
+	       F^code:=F^machine.genMem(iv.getDep(), iv.getReg(), t.getTaille());      --empiler la valeur de la variable
+	    end
+	 else
+        F^est_adresse:=true;
+	    F^code:=FX^code;  
+	end
+   with INFOATTRIBUTE then       --attribut
+   ia:=i;
+        F^est_adresse:=true;
+        F^code:=F^machine.genAdr(ia.getDep(), ia.getReg()) + FX^code;     --empiler l'adresse de l'attribut
+   else                          --methode
+        F^est_adresse:=true;
+        F^code:=FX^code; 
+  end
 end}
 
 FX -> #type;
@@ -1249,17 +1370,29 @@ FX -> #type;
 local
  
 do
-FX^code:=FX^hcode;
+--FX^est_adresse:=false;
 if (FX^htype=nil) then 
     error(pas_trouve,FX^nom);
 else
 
     FX^type:=FX^htype; 
+    if FX^est_gauche then
+        FX^code:=FX^machine.genComment("adresse");
+    else
+        if FX^hest_adresse then
+            FX^code:=FX^machine.genComment("valeur")+ FX^machine.genReadMem(FX^htype.getTaille()) ;  
+        else 
+            FX^code:=FX^machine.genComment("variable")+ FX^machine.genMem(FX,,FX^htype.getTaille()) ;         
+end 
+    
     end      
 end}
 
 
-FX -> pt ident #htype FX #type;
+FX -> pt ident #htype FX #type #gen;
+global 
+ia: INFO;
+
 #type{
 do
 FX^type:=FX1^type;
@@ -1267,7 +1400,6 @@ end}
 #htype{
 local 
 t1:TDS;
-ia : INFO;
 ic1:INFO;
 ic2: INFOCLASS;
 typ :DTYPE;
@@ -1284,6 +1416,7 @@ ia:=t1.chercherGlobalement(ident^txt);
         FX1^nom:=ident^txt; --nom est herite
         FX1^htype:=FX^htype;
     else
+            -------------------------------------------------------------------------------------------------Nom dattribut et de methode pareil
         FX1^nom:="";
         FX1^htype:=ia.getType();
      end
@@ -1291,21 +1424,25 @@ end
 end                                               --generation de code
 }
 
+#gen{
+do 
+FX^est_adresse:=true;
+   if ia /=nil then
+      FX^code:= FX^machine.genAdrField(ia.getDep()) + FX1^code;
+   else 
+      FX^code:=FX1^code;
+end
+end}
 
 
 -- appel methode sur objet
 FX -> paro ARGS parf #htype FX #type;
-#type{
-do
-    FX^type:=FX1^type;
-end}
-
+global
+etiq:String;
 #htype{
 local
 im:  INFOMETHOD;
 ic: INFOMETHOD;
-i:INFO;
---t1: TDS;
 t2: TDM;
 t3: TDM;
 typ:DTYPE;
@@ -1331,15 +1468,22 @@ t3:=ic2.getConstructors();
            error(methode_non_existante,FX^nom,ARGS^listArg,ic1.getName());
        else
            FX1^htype:=ic.getType();--pour une methode c est le type de retour
-           end
+           etiq:=ic.getNumEtiq();
+           
+       end
     else
     FX1^htype:=im.getType();
-        --    error(methode_sans_type,im.getName(),im.getType());
-
+    etiq:=im.getNumEtiq();
     end
 end
 end
 }
+#type{
+do
+    FX^est_adresse:=true;
+    FX^type:=FX1^type;
+    FX^code := FX^machine.genAdr(0, "ST") + FX^machine.genCall(etiq,ARGS^code ) + FX1^code;
+end}
 -- liste d'arguments d'appel de methode
 ARGS ->  E ARGSX #listArg ;
 #listArg{
@@ -1347,7 +1491,7 @@ do
 call ARGSX^listArg.inserer(E^type);
 ARGS^listArg := ARGSX^listArg;
 end}
-ARGS -> #listArg; --cas d une methode sans parametres
+ARGS -> #listArg; --cas d une methode sans parametres    -------------------------------------------------------------------------------------------------Nom dattribut et de methode pareil
 #listArg{
 do
 ARGS^listArg :=new LTYPES();--nil;-- 
