@@ -139,6 +139,7 @@ global
 local
 do
    machine := PROGRAMME^source.getMachine();
+   CLASSES^machine:=machine;
 end
 }
 
@@ -155,7 +156,7 @@ local
   cp : STRING ; -- code de la procedure
 do
  cp:=CLASSES^main+ CLASSES^code;
- call machine.writeCode(PROGRAMME^source.getFileName(), "; GC"); 
+ call machine.writeCode(PROGRAMME^source.getFileName(),cp); 
    -- code de la procedure : generer le prologue et l'epilogue 
    -- etiquette + taille des parametres + taille retour + code des instructions
  --  cp := tam.genFonction( ,0 , 0, BLOC^code);              --MOUNA
@@ -313,7 +314,11 @@ i := t.chercherLocalement(ident^txt);   -- possiblite de redefinition dun attrib
       -- creer un attribut
      ia := new INFOATTRIBUTE(ident^txt,TYPE^type,DEF^hdep,"HB");
        DEF^dep := DEF^hdep + TYPE^type.getTaille();
+       if DEF^machine=nil then
+       write "here we go";
+       else
        DEF^code:=DEF^machine.genDecl(ident^txt, ia);          
+       end
 
      --mise a jour de la tds des attributs
      call DEF^infoclass.addAttribute(ident^txt,ia);
@@ -608,7 +613,7 @@ INSTS -> INST #adr INSTS #gen;
 
 #adr {
 do
-    write "@ courante = " + INST^dep + "\n";
+--    write "@ courante = " + INST^dep + "\n";
     INSTS1^hdep := INST^dep;
 end
 }
