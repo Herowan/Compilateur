@@ -96,3 +96,8 @@ Changement effectué :
 -	A la création d’un constructeur il faut alloué de la place this en 3[LB]
 -	Pour une méthode this est dans -1[LB], on fait un genMalloc(taille) + LAODA-1[LB] puis STOREI(taille)
 -	La taille d'une classe est la somme des tailles de ses attributs
+
+
+Pas encore fait:
+   - quand une classe (PointC) etend une classe (Point), il faut que chaque méthode déclarée dans PointC (afficher)
+   ait le même numéro dans la tvm que la méthode ayant le même nom pour sa classe mère.
