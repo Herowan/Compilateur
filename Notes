@@ -75,3 +75,24 @@ Choix pris concernant la taille de la classe:
    et de la taille de sa mère si elle en a une.
    - A chaque fois qu'on ajoute un attribut on augmente la taille de la classe en ajoutant la taille d'un attribut.
    - Donc un attribut a une taille ou plutot son type a une taille.
+
+-   Ajouter à l’étiquette des méthodes la signature.
+-	Ajouter un attribut num à infomethod. 
+-	Dans l’appel d’une procedure on récupère son num
+-	On ajoute la partie du code(jump) qui existe à la case numéro num dans la table virtuelle.
+
+-	une table virtuelle sera crée à la création de la classe, on ajoute à la création les méthodes de sa mère.
+
+-	Le numéro dans l’info méthode sera récupéré par infoclass=> donc il faut ajouter un compteur dans infoclass qui donne le numéro de la méthode, ce numéro sera initialisé à la création de l’infoclass (0 si pas de parent, sinon nombre de méthode de la mère)
+
+
+Question : une méthode peut avoir le même nom qu’un attribut.
+Reste à faire :
+-	Gestion de la’ppel de methode : parametre , lien statique
++ Gestion de this(gestion de param) 
+-	Gestion de super : on fait call au constructeur de la mère avec les paramètres données.
+Changement effectué :
+-	Lors d’une affectation, on teste si l’élement à gauche est une adresse ou pas, on récupère cette information grace à un attribut synthétisé est_adresse, selon le résulat on fait ou bien un STOREI ou un STORE(n) @var(code ajouté au niveau de la règle F->ident
+-	A la création d’un constructeur il faut alloué de la place this en 3[LB]
+-	Pour une méthode this est dans -1[LB], on fait un genMalloc(taille) + LAODA-1[LB] puis STOREI(taille)
+-	La taille d'une classe est la somme des tailles de ses attributs
