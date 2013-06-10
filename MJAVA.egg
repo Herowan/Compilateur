@@ -79,8 +79,9 @@ inh machine : AbstractMachine for PROGRAMME, CLASSES, DEFCLASSE, CORPS, DEFS, DE
 -- adresses
 syn dep : INTEGER for BLOC, INST, INSTS, DEF;--, DEFS, ,DEFCLASSE,E;
 inh hdep : INTEGER for BLOC,INST,INSTS,PARF, PARFS,PARFSX, DEFS, DEF, SIX, ARGSX ;
+inh hdepParam :INTEGER for PARFS, PARF,PARFSX;
 --inh hdep: INTEGER for DEFS, DEF, CORPS,CLASSES, DEFCLASSE, BLOC, INST, INSTS, SIX;
-inh est_gauche: BOOLEAN for ER,ERX, TERME, ES, ESX, FACTEUR, TX, F, FX;
+inh est_gauche: BOOLEAN for E,ER,ERX, TERME, ES, ESX, FACTEUR, TX, F, FX;
 
 --dit si une expression est une adresse cad pointe sur une zone memoire
 syn est_adresse: BOOLEAN for ER, ERX, ES,ESX, TERME, TX, FACTEUR, F, E ,AFFX;
@@ -155,7 +156,7 @@ end
 local
   cp : STRING ; -- code de la procedure
 do
- cp:=CLASSES^main+ CLASSES^code;
+ cp:=CLASSES^main+ CLASSES^code ;
  call machine.writeCode(PROGRAMME^source.getFileName(),cp); 
    -- code de la procedure : generer le prologue et l'epilogue 
    -- etiquette + taille des parametres + taille retour + code des instructions
@@ -220,7 +221,7 @@ end
 #gen {   --generation de code !
 do
 --DEFCLASSE^dep := DEFCLASSE^hdep + 1;
-DEFCLASSE^code := DEFCLASSE^machine.genConsDef(ident^txt,ic.getTaille())+ CORPS^code;
+DEFCLASSE^code := DEFCLASSE^machine.genConsDef(ident^txt,ic.getTaille())+ CORPS^code + ic.genereTVM();
 DEFCLASSE^main := CORPS^main;
 end
 }
@@ -263,7 +264,7 @@ end
 CORPS -> aco #hdep DEFS acf #gen;
 #hdep{
 do
-DEFS^hdep:=3;
+DEFS^hdep:=0;
 end
 }
 #gen{
@@ -315,9 +316,8 @@ i := t.chercherLocalement(ident^txt);   -- possiblite de redefinition dun attrib
      ia := new INFOATTRIBUTE(ident^txt,TYPE^type,DEF^hdep,"HB");
        DEF^dep := DEF^hdep + TYPE^type.getTaille();
        if DEF^machine=nil then
-       write "here we go";
        else
-       DEF^code:=DEF^machine.genDecl(ident^txt, ia);          
+       DEF^code:="";--DEF^machine.genDecl(ident^txt, ia);          
        end
 
      --mise a jour de la tds des attributs
@@ -328,13 +328,22 @@ end
 }
 
 -- methode (fonction) 
-DEF ->  TYPE ident paro PARFS parf #tds  BLOC #gen  ;
+DEF ->  TYPE ident paro #hdepParam PARFS parf #tds  BLOC #gen  ;
+global
+ic:INFOCLASS;
+#hdepParam{
+do
+ic:= DEF^infoclass;--on stocke le this dans -1[LB] on augmente le deplacement pour les parametres de la taille de this
+PARFS^hdepParam:=1+ic.getTaille();
+end}
 #tds {
 local 
 i : INFO;
 im: INFOMETHOD;
+im1: INFOMETHOD;
 t:TDM;
 s: String;
+num:Integer;
 do
  BLOC^hdep:=3;
  t:=DEF^infoclass.getMethods();
@@ -343,35 +352,56 @@ do
     error(methode_existe_deja, ident^txt);
  else    
      -- creer une methode           
-    im := new INFOMETHOD(ident^txt,TYPE^type,PARFS^signature,true);  -- a modifier  TAM
+    im := new INFOMETHOD(ident^txt,TYPE^type,PARFS^signature,true);  
     --ajouter la liste des parametres(une TDS) a l infoMethod 
     call im.setListParam(PARFS^tdsParam);
   --  call DEF^tds.inserer(ident^txt,im);
      --mise a jour de la tds des methodes
     s:=im.getName();
-    call DEF^infoclass.addMethod(s,im);
+    i:=t.chercherGlobalement(ident^txt,PARFS^signature);
+    if i/= nil then
+        match i with INFOMETHOD then
+        im1:=i;
+        num:=im1.getNumE();
+        call im.setNumEtiq(num);
+        call DEF^infoclass.addMethod(s,im, num);
+        end  
+     else
+        call DEF^infoclass.addMethod(s,im);  
+    end
+
      
     --on donne l infoMethod au bloc 
     BLOC^infoMethod:=im;
     BLOC^tdsParamh:=PARFS^tdsParam;
     BLOC^typeR:=TYPE^type;
+    
     end
 end
 }
 #gen{
 local
-ic:INFOCLASS;
 tailleParam:Integer;
 do
 DEF^dep:=0; --pas de deplacement pour une methode
- ic:= DEF^infoclass;
- tailleParam:=PARFS^signature.getTaille();
+ if PARFS^signature/=nil then
+    tailleParam:=PARFS^signature.getTaille();
+ else
+    tailleParam:=0;
+ end
  DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam, TYPE^type.getTaille() ,ic.getTaille(), BLOC^code);   
  DEF^main:="";
  end
  }
 -- methode (procedure)
-DEF ->  void ident paro PARFS  parf  #tds BLOC #gen ;
+DEF ->  void ident paro #hdepParam PARFS  parf  #tds BLOC #gen ;
+global
+ic:INFOCLASS;
+#hdepParam{
+do --on stocke le this dans -1[LB] on augmente le deplacement pour les parametres de la taille de this
+ic:= DEF^infoclass;
+PARFS^hdepParam:=1+ic.getTaille();
+end}
 
 #tds {
 local 
@@ -403,25 +433,36 @@ end
 
 #gen{
 local
-ic:INFOCLASS;
 tailleParam:Integer;
 do
 DEF^dep:=0; --pas de deplacement pour une methode
- ic:= DEF^infoclass;
- tailleParam:=PARFS^signature.getTaille();
- DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam,ic.getTaille(), 0 , BLOC^code);   
- if ident^txt.equals("main") then
-    DEF^main:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam,ic.getTaille(), 0 , BLOC^code); 
+ 
+if PARFS^signature/=nil then
+    tailleParam:=PARFS^signature.getTaille();
  else
+    tailleParam:=0;
+ end
+ 
+ if ident^txt.equals("main") then
+    DEF^main:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam,0,ic.getTaille() , BLOC^code); 
+    DEF^code:= "";
+ else
+  DEF^code:= DEF^machine.genFonction(ic.getName(),ident^txt,PARFS^signature,tailleParam,0,ic.getTaille() , BLOC^code);  
     DEF^main:="";
   end
  end
  }
 
 -- constructeur
-DEF -> ident  paro PARFS parf #tds BLOC #gen;
+DEF -> ident  paro #hdepParam PARFS parf #tds BLOC #gen;
 global
 im:INFOMETHOD;
+ic:INFOCLASS;
+#hdepParam{
+do
+ic:= DEF^infoclass;
+PARFS^hdepParam:=0;
+end}
 #tds{
 local
 i:INFO;
@@ -463,14 +504,16 @@ end
  }
 #gen{
 local
-ic:INFOCLASS;
 tailleParam:Integer;
 t:DTYPE;
 do
 DEF^dep:=0; --pas de deplacement pour une methode
 t:=im.getType();
- ic:= DEF^infoclass;
- tailleParam:=PARFS^signature.getTaille();
+if PARFS^signature/=nil then
+    tailleParam:=PARFS^signature.getTaille();
+ else
+    tailleParam:=0;
+ end
  --generation du code pour le constructeur, au debut genMalloc qui met l'adresse de this en 3[LB]
  DEF^code:= DEF^machine.genCons(ic.getName(),PARFS^signature,tailleParam, t.getTaille() , BLOC^code);   
   DEF^main:="";
@@ -526,19 +569,22 @@ PARFS^tdsParam:= new TDS();
 end
 }
 
-PARFS -> PARF PARFSX #params;
+PARFS -> PARF #hdepParam PARFSX #params;
+global
+i: INFOVAR;
+#hdepParam{
+do
+ i:= new INFOVAR(PARF^type,0-PARFS^hdepParam,"LB");          
+ PARFSX^hdepParam:= PARFS^hdepParam + PARF^type.getTaille() ;    --mise a jour de hdepParam
+ end
+ }
+
 #params{
-local
-i: INFOVAR ;  --ou INFOATTRIBUTE
 do
 call PARFSX^signature.inserer(PARF^type); 
-PARFS^signature := PARFSX^signature;
-i:= new INFOVAR(PARF^type,0,"");               --sans deplacement ni registre car ne sera pas 
-                                               --stocké dans la pile
-call PARFSX^tdsParam.inserer(PARF^param,i);
+PARFS^signature := PARFSX^signature;     
+call PARFSX^tdsParam.inserer(PARF^param,i);                                          
 PARFS^tdsParam:=PARFSX^tdsParam;
-
-
 end
 }
 PARFSX -> #params;
@@ -549,17 +595,21 @@ PARFSX^signature := new LTYPES();
 end
 }
 
-PARFSX -> virg PARF PARFSX #params;
+PARFSX -> virg PARF #hdepParam PARFSX #params;
+global
+i: INFOVAR;
+#hdepParam{
+do
+ i:= new INFOVAR(PARF^type,0-PARFSX^hdepParam,"LB");             
+ PARFSX1^hdepParam:= PARFSX^hdepParam + PARF^type.getTaille() ;    --mise a jour de hdepParam
+ end
+ }
 #params{
-local
-i: INFOVAR ;  --ou INFOATTRIBUTE
 do
 call PARFSX1^signature.inserer(PARF^type);      -- methode add de arrayList attention a l'ordre
                                                 -- add ajoute en fin de liste donc j ai change en add(0,elt) pour ajouter en tete
+ call PARFSX1^tdsParam.inserer(PARF^param,i); 
 PARFSX^signature :=PARFSX1^signature;
-
-i:= new INFOVAR(PARF^type, 0, "");                     --peut etre a changer en infoattribute
-call PARFSX1^tdsParam.inserer(PARF^param,i);
 PARFSX^tdsParam:=PARFSX1^tdsParam;
 
 end
@@ -590,7 +640,7 @@ do
 --   write "; tds:\n" + t;
 --   write "; taille des locales = " + (INSTS^adr - BLOC^hadr)+ "\n";         --copiee du BLOC
     BLOC^dep:=INSTS^dep;
-   BLOC^code := INSTS^code + BLOC^machine.genFree(INSTS^dep - BLOC^hdep);
+   BLOC^code := INSTS^code;-- + BLOC^machine.genFree(INSTS^dep - BLOC^hdep);
 end
 }
 
@@ -673,11 +723,15 @@ do
      }
 
 --declaration avec affectation
-INST-> TYPE ident affect E pv #type #gen;
+INST-> TYPE ident affect #est_gauche E pv #type #gen;
 global 
     i : INFO ;
     iv : INFOVAR ;
-
+#est_gauche{
+do
+E^est_gauche:=false;
+end
+}
 #type {
 local
     t: TDS;
@@ -713,12 +767,17 @@ end
 
 #gen{
 do
-     INST^code := INST^machine.genDecl(ident^txt, iv,E^code);
+     INST^code := INST^machine.genDecl(ident^txt, iv,E^code) ;
  end 
      }
 
 -- instruction expression
-INST -> E pv #gen;
+INST -> #est_gauche E pv #gen;
+#est_gauche{
+do
+E^est_gauche:=true;
+end
+}
 #gen{
 do
 INST^dep:=0;    ------------------------------------------------------------------------------------------------------ a voir
@@ -735,7 +794,12 @@ end
 } 
 
 -- conditionnelle
-INST -> si paro E parf #type  BLOC SIX #gen ;
+INST -> si paro #est_gauche E parf #type  BLOC SIX #gen ;
+#est_gauche{
+do
+E^est_gauche:=false;
+end
+}
 #gen {
 do
     INST^dep:= INST^hdep;
@@ -764,7 +828,12 @@ do
 end
 }
 -- return
-INST -> retour E pv #type #gen ;
+INST -> retour #est_gauche E pv #type #gen ;
+#est_gauche{
+do
+E^est_gauche:=false;
+end
+}
 #type{
 local
 i:INFOMETHOD;
@@ -802,26 +871,34 @@ end
 end}
 #gen{
 do
-ER^est_gauche:=true;
+ER^est_gauche:=E^est_gauche;
 end}
 
 #type{
 local
     t : DTYPE ;
 do
+    E^type := ER^type;
     t := AFFX^type ;
     if  t/= nil then
      if ~(t.compareTo(ER^type)) then
         error(type_incompatible, AFFX^type, ER^type);
+     end
     end
-    E^type := ER^type;
-    end
+if ~E^est_gauche then --E sera affectee a quelque chose
+    E^code:= ER^code ;
+else    
+    
  if ER^est_adresse then         --ER est une adresse (cad pointeur) dans on ecrit a cette adresse 
-    E^code:= AFFX^code + ER^code+ E^machine.genWriteMem(AFFX^type.getTaille()); 
+    if AFFX^type=nil then
+    E^code:= ER^code + E^machine.genWriteMem(0);-- AFFX^code +
+    else
+    E^code:= AFFX^code + ER^code + E^machine.genWriteMem(AFFX^type.getTaille());
+    end 
  else                           -- ER est une variable locale 
     E^code:= AFFX^code + ER^code;
  end                                                     
-
+end
 
 end
 }
@@ -1207,10 +1284,10 @@ end
 F -> nouveau TYPE paro ARGS parf #htype FX #gen #type;
 global
 it:INFOCLASS;
+i1:INFO;
 #htype{
 local
 i: INFO;
-i1:INFO;
 t:TDM;
 do
    FX^nom:="";
@@ -1232,9 +1309,13 @@ match i
 end
 end}
 #gen{
+local
+ia1:INFOMETHOD;
 do
-   F^code := F^machine.genMalloc(it.getTaille()) + FX^code ;  --TYPE^type       -- l'adresse du nouveau objet crée est dans la pile suivi du code de FX(store/load)
---   FX^hest_adresse:=true;                                                       -- on dit a FX qu'il doit faire un laod
+   match i1 with INFOMETHOD then 
+   ia1:=i1;
+   F^code :=F^machine.genCalli(ia1,FX^code);--+ F^machine.genMalloc(it.getTaille()) + FX^code ;  --TYPE^type       -- l'adresse du nouveau objet crée est dans la pile suivi du code de FX(store/load)
+   end                                                     -- on dit a FX qu'il doit faire un laod
 end}
 #type{
 do
@@ -1365,7 +1446,7 @@ t:=i.getType();
 	    end
 	 else
         F^est_adresse:=true;
-	    F^code:=FX^code;  
+	    F^code:= F^machine.genAdr(iv.getDep(), iv.getReg()) +F^machine.genReadMem(1)  +FX^code;    --empiler l'adresse de la variable
 	end
    with INFOATTRIBUTE then       --attribut
    ia:=i;
@@ -1405,7 +1486,7 @@ end}
 FX -> pt ident #htype FX #type #gen;
 global 
 ia: INFO;
-
+typ :DTYPE;
 #type{
 do
 FX^type:=FX1^type;
@@ -1415,7 +1496,6 @@ local
 t1:TDS;
 ic1:INFO;
 ic2: INFOCLASS;
-typ :DTYPE;
 do
 typ:=FX^htype;
 ic1:=FX^tdsProg.chercherGlobalement(typ.getNom());
@@ -1506,9 +1586,14 @@ do
 --    FX^code := FX^machine.genAdr(0, "ST") + FX^machine.genCall(etiq,ARGS^code ) + FX1^code;
 end}
 -- liste d'arguments d'appel de methode
-ARGS ->  E #hdep ARGSX #listArg ;
+ARGS -> #est_gauche E #hdep ARGSX #listArg ;
 global
 d:Integer;
+#est_gauche{
+do
+E^est_gauche:=false;
+end
+}
 #hdep{
 do
  --  creer le parametre
@@ -1532,9 +1617,14 @@ do
 ARGS^code:="";
 ARGS^listArg :=new LTYPES();--nil;-- 
 end}
-ARGSX ->   virg E #hdep ARGSX #listArg ;
+ARGSX ->   virg #est_gauche E #hdep ARGSX #listArg ;
 global
 d:Integer;
+#est_gauche{
+do
+E^est_gauche:=false;
+end
+}
 #hdep{
 do
  --  creer le parametre
